@@ -1,0 +1,6 @@
+# Outbox Directory
+
+This directory stores payloads that failed to send due to network issues.
+They will be automatically retried on the next sync run.
+
+Do not delete these files manually unless you want to discard them.

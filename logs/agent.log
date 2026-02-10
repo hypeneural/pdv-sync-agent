@@ -1,0 +1,213 @@
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:102 | ============================================================
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:103 | PDV Sync Agent Configuration
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:104 | ============================================================
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:105 | SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:106 | Database: HiperPdv
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:107 | Auth Mode: Windows Authentication (Trusted)
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:108 | ODBC Driver: ODBC Driver 17 for SQL Server
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:109 | ------------------------------------------------------------
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:110 | Store ID: 10
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:111 | Store Alias: Loja 01
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:112 | ------------------------------------------------------------
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:113 | API Endpoint: https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:114 | API Token: ********...AQUI
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:115 | Timeout: 15s
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:116 | ------------------------------------------------------------
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:117 | Sync Window: 10 minutes
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:118 | State File: data\state.json
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:119 | Outbox Dir: data\outbox
+2026-02-09 22:38:01 | INFO     | src.settings:log_config:120 | ============================================================
+2026-02-09 22:38:01 | INFO     | src.runner:run:49 | ============================================================
+2026-02-09 22:38:01 | INFO     | src.runner:run:50 | Starting PDV Sync
+2026-02-09 22:38:01 | INFO     | src.runner:run:51 | ============================================================
+2026-02-09 22:38:01 | INFO     | src.sender:list_pending:74 | Found 0 pending payloads in outbox
+2026-02-09 22:38:01 | INFO     | src.state:load:47 | Loaded state: last_sync_to=None
+2026-02-09 22:38:01 | INFO     | src.state:calculate_window:99 | No previous sync, using window of 10 minutes
+2026-02-09 22:38:01 | INFO     | src.state:calculate_window:105 | Sync window: 2026-02-09 22:28:01.791082 -> 2026-02-09 22:38:01.791082
+2026-02-09 22:38:01 | INFO     | src.runner:_build_payload:91 | Gathering data from database
+2026-02-09 22:38:01 | INFO     | src.db:connect:31 | Connecting to SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 22:38:01 | INFO     | src.db:connect:32 | Database: HiperPdv
+2026-02-09 22:38:02 | SUCCESS  | src.db:connect:39 | Database connection established
+2026-02-09 22:38:02 | INFO     | src.queries:get_store_info:55 | Store: Loja 1 - MC Komprão Centro TJ (ID: 10)
+2026-02-09 22:38:02 | INFO     | src.queries:get_current_turno:84 | Current turno: 6A91E9F2-FF8C-4E40-BA90-8BF04B889A57 (sequencial=1, fechado=False)
+2026-02-09 22:38:02 | INFO     | src.runner:_build_payload:104 | No operations found in window
+2026-02-09 22:38:02 | INFO     | src.queries:get_sales_by_vendor:167 | Found 0 vendor aggregations
+2026-02-09 22:38:02 | INFO     | src.queries:get_payments_by_method:217 | Found 0 payment method aggregations
+2026-02-09 22:38:02 | INFO     | src.runner:_build_payload:133 | Payload built: 0 operations
+2026-02-09 22:38:02 | INFO     | src.runner:_build_payload:134 |   - Vendors: 0
+2026-02-09 22:38:02 | INFO     | src.runner:_build_payload:135 |   - Payment methods: 0
+2026-02-09 22:38:02 | INFO     | src.sender:send:139 | Sending payload to https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349 (sync_id=13e9c2f24192...)
+2026-02-09 22:38:03 | SUCCESS  | src.sender:send:146 | Payload sent successfully (HTTP 200)
+2026-02-09 22:38:03 | INFO     | src.state:save:65 | State saved: last_sync_to=2026-02-09 22:38:01.791082
+2026-02-09 22:38:03 | SUCCESS  | src.runner:run:74 | Sync completed successfully
+2026-02-09 22:38:03 | INFO     | src.runner:run:85 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:102 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:103 | PDV Sync Agent Configuration
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:104 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:105 | SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:106 | Database: HiperPdv
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:107 | Auth Mode: Windows Authentication (Trusted)
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:108 | ODBC Driver: ODBC Driver 17 for SQL Server
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:109 | ------------------------------------------------------------
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:110 | Store ID: 10
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:111 | Store Alias: Loja 01
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:112 | ------------------------------------------------------------
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:113 | API Endpoint: https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:114 | API Token: ********...AQUI
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:115 | Timeout: 15s
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:116 | ------------------------------------------------------------
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:117 | Sync Window: 10 minutes
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:118 | State File: data\state.json
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:119 | Outbox Dir: data\outbox
+2026-02-09 22:55:10 | INFO     | src.settings:log_config:120 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.runner:run:49 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.runner:run:50 | Starting PDV Sync
+2026-02-09 22:55:10 | INFO     | src.runner:run:51 | ============================================================
+2026-02-09 22:55:10 | INFO     | src.sender:list_pending:74 | Found 0 pending payloads in outbox
+2026-02-09 22:55:10 | INFO     | src.state:load:47 | Loaded state: last_sync_to=2026-02-09 22:38:01.791082
+2026-02-09 22:55:10 | INFO     | src.state:calculate_window:105 | Sync window: 2026-02-09 22:38:01.791082 -> 2026-02-09 22:55:10.176144
+2026-02-09 22:55:10 | INFO     | src.runner:_build_payload:91 | Gathering data from database
+2026-02-09 22:55:10 | INFO     | src.db:connect:31 | Connecting to SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 22:55:10 | INFO     | src.db:connect:32 | Database: HiperPdv
+2026-02-09 22:55:10 | SUCCESS  | src.db:connect:39 | Database connection established
+2026-02-09 22:55:10 | INFO     | src.queries:get_store_info:55 | Store: Loja 1 - MC Komprão Centro TJ (ID: 10)
+2026-02-09 22:55:10 | INFO     | src.queries:get_current_turno:84 | Current turno: 6A91E9F2-FF8C-4E40-BA90-8BF04B889A57 (sequencial=1, fechado=False)
+2026-02-09 22:55:10 | INFO     | src.queries:get_sales_by_vendor:167 | Found 1 vendor aggregations
+2026-02-09 22:55:10 | INFO     | src.queries:get_payments_by_method:217 | Found 1 payment method aggregations
+2026-02-09 22:55:10 | INFO     | src.runner:_build_payload:133 | Payload built: 3 operations
+2026-02-09 22:55:10 | INFO     | src.runner:_build_payload:134 |   - Vendors: 1
+2026-02-09 22:55:10 | INFO     | src.runner:_build_payload:135 |   - Payment methods: 1
+2026-02-09 22:55:10 | INFO     | src.sender:send:139 | Sending payload to https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349 (sync_id=264e0384c869...)
+2026-02-09 22:55:11 | SUCCESS  | src.sender:send:146 | Payload sent successfully (HTTP 200)
+2026-02-09 22:55:11 | INFO     | src.state:save:65 | State saved: last_sync_to=2026-02-09 22:55:10.176144
+2026-02-09 22:55:11 | SUCCESS  | src.runner:run:74 | Sync completed successfully
+2026-02-09 22:55:11 | INFO     | src.runner:run:85 | ============================================================
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:102 | ============================================================
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:103 | PDV Sync Agent Configuration
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:104 | ============================================================
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:105 | SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:106 | Database: HiperPdv
+2026-02-09 23:20:13 | INFO     | src.settings:log_config:107 | Auth Mode: Windows Authentication (Trusted)
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:108 | ODBC Driver: ODBC Driver 17 for SQL Server
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:109 | ------------------------------------------------------------
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:110 | Store ID: 10
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:111 | Store Alias: Loja 01
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:112 | ------------------------------------------------------------
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:113 | API Endpoint: https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:114 | API Token: ********...AQUI
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:115 | Timeout: 15s
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:116 | ------------------------------------------------------------
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:117 | Sync Window: 10 minutes
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:118 | State File: data\state.json
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:119 | Outbox Dir: data\outbox
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:120 | Log File: logs\agent.log
+2026-02-09 23:20:14 | INFO     | src.settings:log_config:121 | ============================================================
+2026-02-09 23:20:14 | INFO     | src.runner:run:49 | ============================================================
+2026-02-09 23:20:14 | INFO     | src.runner:run:50 | Starting PDV Sync
+2026-02-09 23:20:14 | INFO     | src.runner:run:51 | ============================================================
+2026-02-09 23:20:14 | INFO     | src.sender:list_pending:74 | Found 0 pending payloads in outbox
+2026-02-09 23:20:14 | INFO     | src.state:load:47 | Loaded state: last_sync_to=2026-02-09 22:55:10.176144
+2026-02-09 23:20:14 | INFO     | src.state:calculate_window:105 | Sync window: 2026-02-09 22:55:10.176144 -> 2026-02-09 23:20:14.020588
+2026-02-09 23:20:14 | INFO     | src.runner:_build_payload:91 | Gathering data from database
+2026-02-09 23:20:14 | INFO     | src.db:connect:31 | Connecting to SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 23:20:14 | INFO     | src.db:connect:32 | Database: HiperPdv
+2026-02-09 23:20:14 | SUCCESS  | src.db:connect:39 | Database connection established
+2026-02-09 23:20:14 | INFO     | src.queries:get_store_info:55 | Store: Loja 1 - MC Komprão Centro TJ (ID: 10)
+2026-02-09 23:20:14 | INFO     | src.queries:get_current_turno:84 | Current turno: 6A91E9F2-FF8C-4E40-BA90-8BF04B889A57 (sequencial=1, fechado=False)
+2026-02-09 23:20:14 | INFO     | src.runner:_build_payload:104 | No operations found in window
+2026-02-09 23:20:14 | INFO     | src.queries:get_sales_by_vendor:167 | Found 0 vendor aggregations
+2026-02-09 23:20:14 | INFO     | src.queries:get_payments_by_method:217 | Found 0 payment method aggregations
+2026-02-09 23:20:14 | INFO     | src.runner:_build_payload:133 | Payload built: 0 operations
+2026-02-09 23:20:14 | INFO     | src.runner:_build_payload:134 |   - Vendors: 0
+2026-02-09 23:20:14 | INFO     | src.runner:_build_payload:135 |   - Payment methods: 0
+2026-02-09 23:20:14 | INFO     | src.sender:send:139 | Sending payload to https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349 (sync_id=d46b6b03d048...)
+2026-02-09 23:20:15 | SUCCESS  | src.sender:send:146 | Payload sent successfully (HTTP 200)
+2026-02-09 23:20:15 | INFO     | src.state:save:65 | State saved: last_sync_to=2026-02-09 23:20:14.020588
+2026-02-09 23:20:15 | SUCCESS  | src.runner:run:74 | Sync completed successfully
+2026-02-09 23:20:15 | INFO     | src.runner:run:85 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:171 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:172 | PDV Sync Agent Configuration
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:173 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:174 | SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:175 | Database: HiperPdv
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:176 | Auth Mode: Windows Authentication (Trusted)
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:177 | ODBC Driver: ODBC Driver 17 for SQL Server
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:178 | Encrypt: no | TrustCert: yes
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:179 | ------------------------------------------------------------
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:180 | Store ID: 10
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:181 | Store Alias: Loja 01
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:182 | ------------------------------------------------------------
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:183 | API Endpoint: https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:184 | API Token: ********...AQUI
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:185 | Timeout: 15s
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:186 | ------------------------------------------------------------
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:187 | Sync Window: 10 minutes
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:188 | State File: data\state.json
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:189 | Outbox Dir: data\outbox
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:190 | Log File: logs\agent.log
+2026-02-09 23:28:50 | INFO     | src.settings:log_config:191 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.runner:run:49 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.runner:run:50 | Starting PDV Sync
+2026-02-09 23:28:50 | INFO     | src.runner:run:51 | ============================================================
+2026-02-09 23:28:50 | INFO     | src.sender:list_pending:74 | Found 0 pending payloads in outbox
+2026-02-09 23:28:50 | INFO     | src.state:load:47 | Loaded state: last_sync_to=2026-02-09 23:20:14.020588
+2026-02-09 23:28:50 | INFO     | src.state:calculate_window:105 | Sync window: 2026-02-09 23:20:14.020588 -> 2026-02-09 23:28:50.618273
+2026-02-09 23:28:50 | INFO     | src.runner:_build_payload:91 | Gathering data from database
+2026-02-09 23:28:50 | INFO     | src.db:connect:85 | Connecting to SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-09 23:28:50 | INFO     | src.db:connect:86 | Database: HiperPdv
+2026-02-09 23:28:50 | SUCCESS  | src.db:connect:93 | Database connection established
+2026-02-09 23:28:50 | INFO     | src.queries:get_store_info:55 | Store: Loja 1 - MC Komprão Centro TJ (ID: 10)
+2026-02-09 23:28:50 | INFO     | src.queries:get_current_turno:84 | Current turno: 6A91E9F2-FF8C-4E40-BA90-8BF04B889A57 (sequencial=1, fechado=False)
+2026-02-09 23:28:50 | INFO     | src.runner:_build_payload:104 | No operations found in window
+2026-02-09 23:28:50 | INFO     | src.queries:get_sales_by_vendor:167 | Found 0 vendor aggregations
+2026-02-09 23:28:50 | INFO     | src.queries:get_payments_by_method:217 | Found 0 payment method aggregations
+2026-02-09 23:28:50 | INFO     | src.runner:_build_payload:133 | Payload built: 0 operations
+2026-02-09 23:28:50 | INFO     | src.runner:_build_payload:134 |   - Vendors: 0
+2026-02-09 23:28:50 | INFO     | src.runner:_build_payload:135 |   - Payment methods: 0
+2026-02-09 23:28:50 | INFO     | src.sender:send:139 | Sending payload to https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349 (sync_id=ffe51edf0e07...)
+2026-02-09 23:28:51 | SUCCESS  | src.sender:send:146 | Payload sent successfully (HTTP 200)
+2026-02-09 23:28:51 | INFO     | src.state:save:65 | State saved: last_sync_to=2026-02-09 23:28:50.618273
+2026-02-09 23:28:51 | SUCCESS  | src.runner:run:74 | Sync completed successfully
+2026-02-09 23:28:51 | INFO     | src.runner:run:85 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:171 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:172 | PDV Sync Agent Configuration
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:173 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:174 | SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:175 | Database: HiperPdv
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:176 | Auth Mode: Windows Authentication (Trusted)
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:177 | ODBC Driver: ODBC Driver 17 for SQL Server
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:178 | Encrypt: no | TrustCert: yes
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:179 | ------------------------------------------------------------
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:180 | Store ID: 10
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:181 | Store Alias: Loja 01
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:182 | ------------------------------------------------------------
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:183 | API Endpoint: https://webhook.soclick.click/webhook/1276580b-9957-402a-8ad6-bb13b9e0d349
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:184 | API Token: ********...AQUI
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:185 | Timeout: 15s
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:186 | ------------------------------------------------------------
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:187 | Sync Window: 10 minutes
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:188 | State File: data\state.json
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:189 | Outbox Dir: data\outbox
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:190 | Log File: logs\agent.log
+2026-02-10 00:31:14 | INFO     | src.settings:log_config:191 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.runner:run:49 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.runner:run:50 | Starting PDV Sync
+2026-02-10 00:31:14 | INFO     | src.runner:run:51 | ============================================================
+2026-02-10 00:31:14 | INFO     | src.sender:list_pending:74 | Found 0 pending payloads in outbox
+2026-02-10 00:31:14 | INFO     | src.state:load:47 | Loaded state: last_sync_to=2026-02-09 23:28:50.618273
+2026-02-10 00:31:14 | INFO     | src.state:calculate_window:105 | Sync window: 2026-02-09 23:28:50.618273 -> 2026-02-10 00:31:14.131489
+2026-02-10 00:31:14 | INFO     | src.runner:_build_payload:98 | Gathering data from database
+2026-02-10 00:31:14 | INFO     | src.db:connect:85 | Connecting to SQL Server: DESKTOP-EGBRLLG\HIPER
+2026-02-10 00:31:14 | INFO     | src.db:connect:86 | Database: HiperPdv
+2026-02-10 00:31:14 | SUCCESS  | src.db:connect:93 | Database connection established
+2026-02-10 00:31:14 | INFO     | src.queries:get_store_info:55 | Store: Loja 1 - MC Komprão Centro TJ (ID: 10)
+2026-02-10 00:31:14 | INFO     | src.queries:get_current_turno:84 | Current turno: 6A91E9F2-FF8C-4E40-BA90-8BF04B889A57 (sequencial=1, fechado=False)
+2026-02-10 00:31:14 | INFO     | src.runner:_build_payload:111 | No operations found in window
+2026-02-10 00:31:14 | INFO     | src.queries:get_sales_by_vendor:167 | Found 0 vendor aggregations
+2026-02-10 00:31:14 | INFO     | src.queries:get_payments_by_method:217 | Found 0 payment method aggregations
+2026-02-10 00:31:14 | INFO     | src.runner:_build_payload:138 | Payload built: 0 operations
+2026-02-10 00:31:14 | INFO     | src.runner:_build_payload:139 |   - Vendors: 0
+2026-02-10 00:31:14 | INFO     | src.runner:_build_payload:140 |   - Payment methods: 0
+2026-02-10 00:31:14 | INFO     | src.runner:run:71 | No new sales in window — skipping POST
+2026-02-10 00:31:14 | INFO     | src.state:save:65 | State saved: last_sync_to=2026-02-10 00:31:14.131489
+2026-02-10 00:31:14 | INFO     | src.runner:run:92 | ============================================================

@@ -1,0 +1,22 @@
+PDV Sync Agent Doctor — 2026-02-09T23:35:36.092622
+============================================================
+[✅ OK] 1. Arquivo de Configuração
+    Config: C:\Users\Usuario\Desktop\maiscapinhas\chupacabra\pdv-sync-agent\.env
+
+[✅ OK] 2. Permissões de Escrita (Filesystem)
+    State: data
+    Outbox: data\outbox
+    Logs: logs
+
+[✅ OK] 3. Driver ODBC
+    Driver: ODBC Driver 18 for SQL Server
+
+[✅ OK] 4. Conexão SQL Server
+    SQL Server: Microsoft SQL Server 2025 (RTM) - 17.0.1000.7 (X64) 
+
+[✅ OK] 5. Query de Teste (operacao_pdv)
+    Tabela 'operacao_pdv' encontrada
+
+[✅ OK] 6. API Endpoint
+    API respondeu: HTTP 200 (https://webhook.soclick.click/webhook/1276580b-995...)
+
