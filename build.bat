@@ -71,10 +71,21 @@ xcopy /e /i /y "dist\%APP_NAME%\*" "%DIST_FOLDER%\" >nul
 
 REM Copiar scripts de deploy
 copy /y "deploy\install.bat" "%DIST_FOLDER%\" >nul
+copy /y "deploy\install.ps1" "%DIST_FOLDER%\" >nul
 copy /y "deploy\uninstall.bat" "%DIST_FOLDER%\" >nul
 copy /y "deploy\update.bat" "%DIST_FOLDER%\" >nul
 copy /y "deploy\task.template.xml" "%DIST_FOLDER%\" >nul
 copy /y "deploy\config.template.env" "%DIST_FOLDER%\" >nul
+
+REM Empacotar ODBC Driver 17 MSI
+if exist "msodbcsql.msi" (
+    mkdir "%DIST_FOLDER%\extra" 2>nul
+    copy /y "msodbcsql.msi" "%DIST_FOLDER%\extra\" >nul
+    echo    ODBC Driver 17 MSI empacotado em extra\
+) else (
+    echo    AVISO: msodbcsql.msi nao encontrado na raiz do projeto!
+    echo    Coloque o arquivo na raiz para empacotar.
+)
 
 echo    OK.
 
@@ -91,11 +102,14 @@ echo   Conteudo:
 echo     %DIST_FOLDER%\
 echo       pdv-sync-agent.exe
 echo       _internal\           (bibliotecas)
-echo       install.bat          (instalador para lojas)
+echo       install.bat          (launcher)
+echo       install.ps1          (instalador PowerShell v2.0)
 echo       uninstall.bat        (desinstalador)
-echo       update.bat           (atualizador)
+echo       update.bat           (atualizador com rollback)
 echo       task.template.xml    (template do agendador)
 echo       config.template.env  (template de configuracao)
+echo       extra\
+echo         msodbcsql.msi      (ODBC Driver 17)
 echo.
 echo   Proximo passo:
 echo     1. Compacte a pasta %DIST_FOLDER% em um ZIP
@@ -107,3 +121,4 @@ echo.
 call deactivate 2>nul
 endlocal
 pause
+

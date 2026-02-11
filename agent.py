@@ -23,10 +23,9 @@ from loguru import logger
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
+from src import __version__
 from src.settings import load_settings, detect_odbc_driver
 from src.runner import create_runner
-
-__version__ = "1.1.0"
 
 
 def parse_args() -> argparse.Namespace:

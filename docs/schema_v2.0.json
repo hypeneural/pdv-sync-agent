@@ -1,0 +1,817 @@
+{
+  "$defs": {
+    "AgentInfo": {
+      "description": "Information about the sync agent.",
+      "properties": {
+        "version": {
+          "default": "2.0.0",
+          "title": "Version",
+          "type": "string"
+        },
+        "machine": {
+          "title": "Machine",
+          "type": "string"
+        },
+        "sent_at": {
+          "format": "date-time",
+          "title": "Sent At",
+          "type": "string"
+        }
+      },
+      "title": "AgentInfo",
+      "type": "object"
+    },
+    "ClosureTotals": {
+      "description": "Values declared by operator at turno closing (op=9).",
+      "properties": {
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        },
+        "por_pagamento": {
+          "items": {
+            "$ref": "#/$defs/PaymentTotal"
+          },
+          "title": "Por Pagamento",
+          "type": "array"
+        }
+      },
+      "title": "ClosureTotals",
+      "type": "object"
+    },
+    "IntegrityInfo": {
+      "description": "Integrity and idempotency data.",
+      "properties": {
+        "sync_id": {
+          "title": "Sync Id",
+          "type": "string"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "sync_id"
+      ],
+      "title": "IntegrityInfo",
+      "type": "object"
+    },
+    "OperatorInfo": {
+      "description": "Operator or vendor info.",
+      "properties": {
+        "id_usuario": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Usuario"
+        },
+        "nome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nome"
+        }
+      },
+      "title": "OperatorInfo",
+      "type": "object"
+    },
+    "OpsInfo": {
+      "description": "Operations summary for deduplication.",
+      "properties": {
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "ids": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "count",
+        "ids"
+      ],
+      "title": "OpsInfo",
+      "type": "object"
+    },
+    "PaymentMethod": {
+      "description": "Sales by payment method (aggregated).",
+      "properties": {
+        "id_finalizador": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Finalizador"
+        },
+        "meio": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meio"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        }
+      },
+      "title": "PaymentMethod",
+      "type": "object"
+    },
+    "PaymentTotal": {
+      "description": "Total by payment method.",
+      "properties": {
+        "id_finalizador": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Finalizador"
+        },
+        "meio": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meio"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        },
+        "qtd_vendas": {
+          "default": 0,
+          "title": "Qtd Vendas",
+          "type": "integer"
+        }
+      },
+      "title": "PaymentTotal",
+      "type": "object"
+    },
+    "ProductItem": {
+      "description": "Individual product item in a sale.",
+      "properties": {
+        "line_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Id"
+        },
+        "line_no": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line No"
+        },
+        "id_produto": {
+          "title": "Id Produto",
+          "type": "integer"
+        },
+        "codigo_barras": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Codigo Barras"
+        },
+        "nome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nome"
+        },
+        "qtd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "1",
+          "title": "Qtd"
+        },
+        "preco_unit": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Preco Unit"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        },
+        "desconto": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Desconto"
+        },
+        "vendedor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/OperatorInfo"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id_produto"
+      ],
+      "title": "ProductItem",
+      "type": "object"
+    },
+    "SaleDetail": {
+      "description": "Individual sale with items and payments.",
+      "properties": {
+        "id_operacao": {
+          "title": "Id Operacao",
+          "type": "integer"
+        },
+        "data_hora": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Hora"
+        },
+        "id_turno": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Turno"
+        },
+        "itens": {
+          "items": {
+            "$ref": "#/$defs/ProductItem"
+          },
+          "title": "Itens",
+          "type": "array"
+        },
+        "pagamentos": {
+          "items": {
+            "$ref": "#/$defs/SalePayment"
+          },
+          "title": "Pagamentos",
+          "type": "array"
+        },
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        }
+      },
+      "required": [
+        "id_operacao"
+      ],
+      "title": "SaleDetail",
+      "type": "object"
+    },
+    "SalePayment": {
+      "description": "Payment entry in a sale.",
+      "properties": {
+        "line_id": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Line Id"
+        },
+        "id_finalizador": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Finalizador"
+        },
+        "meio": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Meio"
+        },
+        "valor": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Valor"
+        },
+        "troco": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Troco"
+        },
+        "parcelas": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parcelas"
+        }
+      },
+      "title": "SalePayment",
+      "type": "object"
+    },
+    "SalesInfo": {
+      "description": "Aggregated sales data (resumo).",
+      "properties": {
+        "by_vendor": {
+          "items": {
+            "$ref": "#/$defs/VendorSale"
+          },
+          "title": "By Vendor",
+          "type": "array"
+        },
+        "by_payment": {
+          "items": {
+            "$ref": "#/$defs/PaymentMethod"
+          },
+          "title": "By Payment",
+          "type": "array"
+        }
+      },
+      "title": "SalesInfo",
+      "type": "object"
+    },
+    "ShortageTotals": {
+      "description": "Cash shortage values — difference between system and declared (op=4).",
+      "properties": {
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        },
+        "por_pagamento": {
+          "items": {
+            "$ref": "#/$defs/PaymentTotal"
+          },
+          "title": "Por Pagamento",
+          "type": "array"
+        }
+      },
+      "title": "ShortageTotals",
+      "type": "object"
+    },
+    "StoreInfo": {
+      "description": "Information about the store (ponto_venda).",
+      "properties": {
+        "id_ponto_venda": {
+          "title": "Id Ponto Venda",
+          "type": "integer"
+        },
+        "nome": {
+          "title": "Nome",
+          "type": "string"
+        },
+        "alias": {
+          "title": "Alias",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id_ponto_venda",
+        "nome",
+        "alias"
+      ],
+      "title": "StoreInfo",
+      "type": "object"
+    },
+    "TurnoDetail": {
+      "description": "Complete turno info with reconciliation data.",
+      "properties": {
+        "id_turno": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Turno"
+        },
+        "sequencial": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sequencial"
+        },
+        "fechado": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Fechado"
+        },
+        "data_hora_inicio": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Hora Inicio"
+        },
+        "data_hora_termino": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Data Hora Termino"
+        },
+        "operador": {
+          "$ref": "#/$defs/OperatorInfo"
+        },
+        "totais_sistema": {
+          "$ref": "#/$defs/TurnoTotals"
+        },
+        "fechamento_declarado": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ClosureTotals"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "falta_caixa": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ShortageTotals"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "TurnoDetail",
+      "type": "object"
+    },
+    "TurnoTotals": {
+      "description": "System-calculated totals for a turno (from op=1 sales).",
+      "properties": {
+        "total": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total"
+        },
+        "qtd_vendas": {
+          "default": 0,
+          "title": "Qtd Vendas",
+          "type": "integer"
+        },
+        "por_pagamento": {
+          "items": {
+            "$ref": "#/$defs/PaymentTotal"
+          },
+          "title": "Por Pagamento",
+          "type": "array"
+        }
+      },
+      "title": "TurnoTotals",
+      "type": "object"
+    },
+    "VendorSale": {
+      "description": "Sales by vendor (seller).",
+      "properties": {
+        "id_usuario": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Id Usuario"
+        },
+        "nome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Nome"
+        },
+        "qtd_cupons": {
+          "default": 0,
+          "title": "Qtd Cupons",
+          "type": "integer"
+        },
+        "total_vendido": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+              "type": "string"
+            }
+          ],
+          "default": "0.00",
+          "title": "Total Vendido"
+        }
+      },
+      "title": "VendorSale",
+      "type": "object"
+    },
+    "WindowInfo": {
+      "description": "Time window for the sync.",
+      "properties": {
+        "from_dt": {
+          "format": "date-time",
+          "title": "From Dt",
+          "type": "string"
+        },
+        "to_dt": {
+          "format": "date-time",
+          "title": "To Dt",
+          "type": "string"
+        },
+        "minutes": {
+          "title": "Minutes",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "from_dt",
+        "to_dt",
+        "minutes"
+      ],
+      "title": "WindowInfo",
+      "type": "object"
+    }
+  },
+  "description": "Complete sync payload v2.0 sent to the API.",
+  "properties": {
+    "schema_version": {
+      "default": "2.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "agent": {
+      "$ref": "#/$defs/AgentInfo"
+    },
+    "store": {
+      "$ref": "#/$defs/StoreInfo"
+    },
+    "window": {
+      "$ref": "#/$defs/WindowInfo"
+    },
+    "turnos": {
+      "items": {
+        "$ref": "#/$defs/TurnoDetail"
+      },
+      "title": "Turnos",
+      "type": "array"
+    },
+    "vendas": {
+      "items": {
+        "$ref": "#/$defs/SaleDetail"
+      },
+      "title": "Vendas",
+      "type": "array"
+    },
+    "resumo": {
+      "$ref": "#/$defs/SalesInfo"
+    },
+    "ops": {
+      "$ref": "#/$defs/OpsInfo"
+    },
+    "integrity": {
+      "$ref": "#/$defs/IntegrityInfo"
+    }
+  },
+  "required": [
+    "store",
+    "window",
+    "ops",
+    "integrity"
+  ],
+  "title": "SyncPayload",
+  "type": "object",
+  "$id": "https://maiscapinhas.com/schemas/pdv-sync/v2.0",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

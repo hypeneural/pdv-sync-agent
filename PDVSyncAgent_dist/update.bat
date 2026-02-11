@@ -27,8 +27,8 @@ set "TASK_NAME=PDVSyncAgent"
 set "TMP_DIR=%TEMP%\pdvsync_update"
 
 REM ===== URL do pacote (ajuste para seu servidor de releases) =====
-set "ZIP_URL=https://seu-servidor.com/releases/PDVSyncAgent_latest.zip"
-set "HASH_URL=https://seu-servidor.com/releases/PDVSyncAgent_latest.sha256"
+set "ZIP_URL=http://erp.maiscapinhas.com.br/download/PDVSyncAgent_latest.zip"
+set "HASH_URL=http://erp.maiscapinhas.com.br/download/PDVSyncAgent_latest.sha256"
 
 echo.
 echo ============================================================

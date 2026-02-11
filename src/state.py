@@ -11,6 +11,8 @@ from typing import Optional
 from loguru import logger
 from pydantic import BaseModel
 
+from . import BRT
+
 
 class SyncState(BaseModel):
     """Persistent sync state."""
@@ -41,7 +43,11 @@ class StateManager:
 
             # Parse datetime if present
             if data.get("last_sync_to"):
-                data["last_sync_to"] = datetime.fromisoformat(data["last_sync_to"])
+                dt = datetime.fromisoformat(data["last_sync_to"])
+                # Attach BRT if naive (backward compat with old state files)
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=BRT)
+                data["last_sync_to"] = dt
 
             state = SyncState(**data)
             logger.info(f"Loaded state: last_sync_to={state.last_sync_to}")
@@ -90,10 +96,13 @@ class WindowCalculator:
         - 'to' is always now
         """
         state = self.state_manager.load()
-        now = datetime.now()
+        now = datetime.now(BRT)
 
         if state.last_sync_to:
             dt_from = state.last_sync_to
+            # Ensure timezone-aware (backward compat)
+            if dt_from.tzinfo is None:
+                dt_from = dt_from.replace(tzinfo=BRT)
         else:
             dt_from = now - timedelta(minutes=self.window_minutes)
             logger.info(
