@@ -311,7 +311,7 @@ try:
     check("Turno details built", True, f"{len(turno_details)} turnos")
 
     # Build sale details
-    vendas = build_sale_details(wide_items, wide_payments)
+    vendas = build_sale_details(wide_items, wide_payments, canal="HIPER_CAIXA")
     check("Sale details built", True, f"{len(vendas)} vendas")
 
     # Build full payload
@@ -358,7 +358,7 @@ try:
         warn(f"Payload is {size_kb:.0f} KB — consider chunk splitting")
 
     # Schema version
-    check("schema_version present", payload_dict.get("schema_version") == "2.0")
+    check("schema_version present", payload_dict.get("schema_version") == "3.0")
 
     # Agent info
     agent = payload_dict.get("agent", {})
@@ -452,7 +452,7 @@ sender.token = settings.api_token
 headers = sender._get_headers()
 check("Authorization header present", "Authorization" in headers)
 check("Bearer token format", headers["Authorization"].startswith("Bearer "))
-check("X-PDV-Schema-Version header", headers.get("X-PDV-Schema-Version") == "2.0")
+check("X-PDV-Schema-Version header", headers.get("X-PDV-Schema-Version") == "3.0")
 check("Content-Type is application/json",
       headers.get("Content-Type") == "application/json")
 

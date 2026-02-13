@@ -771,6 +771,11 @@
       "title": "Schema Version",
       "type": "string"
     },
+    "event_type": {
+      "default": "sales",
+      "title": "Event Type",
+      "type": "string"
+    },
     "agent": {
       "$ref": "#/$defs/AgentInfo"
     },
@@ -811,7 +816,5 @@
     "integrity"
   ],
   "title": "SyncPayload",
-  "type": "object",
-  "$id": "https://maiscapinhas.com/schemas/pdv-sync/v2.0",
-  "$schema": "https://json-schema.org/draft/2020-12/schema"
+  "type": "object"
 }

@@ -71,6 +71,8 @@ class DatabaseConnection:
     def __init__(self, settings: Settings):
         self.settings = settings
         self._connection: Optional[pyodbc.Connection] = None
+        self._connection_string_override: Optional[str] = None
+        self._column_cache: dict[str, list[str]] = {}
 
     def connect(self) -> pyodbc.Connection:
         """Establish database connection."""
@@ -82,15 +84,23 @@ class DatabaseConnection:
             except pyodbc.Error:
                 self._connection = None
 
+        conn_string = self._connection_string_override or self.settings.odbc_connection_string
+        # Extract database name for logging
+        db_name = "unknown"
+        for part in conn_string.split(";"):
+            if part.upper().startswith("DATABASE="):
+                db_name = part.split("=", 1)[1]
+                break
+
         logger.info(f"Connecting to SQL Server: {self.settings.sql_server_full}")
-        logger.info(f"Database: {self.settings.sql_database}")
+        logger.info(f"Database: {db_name}")
 
         try:
             self._connection = pyodbc.connect(
-                self.settings.odbc_connection_string,
+                conn_string,
                 timeout=30,
             )
-            logger.success("Database connection established")
+            logger.success(f"Database connection established ({db_name})")
             return self._connection
         except pyodbc.Error as e:
             friendly = _friendly_error(e, self.settings)
@@ -138,7 +148,10 @@ class DatabaseConnection:
             return row[0] if row else None
 
     def get_table_columns(self, table_name: str) -> list[str]:
-        """Get list of column names for a table."""
+        """Get list of column names for a table (cached per connection instance)."""
+        if table_name in self._column_cache:
+            return self._column_cache[table_name]
+
         query = """
             SELECT COLUMN_NAME
             FROM INFORMATION_SCHEMA.COLUMNS
@@ -147,7 +160,9 @@ class DatabaseConnection:
         """
         with self.cursor() as cursor:
             cursor.execute(query, (table_name,))
-            return [row[0] for row in cursor.fetchall()]
+            columns = [row[0] for row in cursor.fetchall()]
+            self._column_cache[table_name] = columns
+            return columns
 
     def table_has_column(self, table_name: str, column_name: str) -> bool:
         """Check if a table has a specific column."""
@@ -172,5 +187,18 @@ class DatabaseConnection:
 
 
 def create_db_connection(settings: Settings) -> DatabaseConnection:
-    """Factory function to create database connection."""
+    """Factory function to create HiperPdv (Caixa) database connection."""
     return DatabaseConnection(settings)
+
+
+def create_gestao_db_connection(settings: Settings) -> DatabaseConnection:
+    """Factory function to create Hiper (Gestão) database connection.
+
+    Uses the same Settings but overrides the connection string to point
+    to the Gestão database.
+    """
+    db = DatabaseConnection(settings)
+    # Override connection to use Gestão database
+    db._connection_string_override = settings.odbc_connection_string_gestao
+    return db
+

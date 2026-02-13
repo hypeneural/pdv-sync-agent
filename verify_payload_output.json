@@ -1,0 +1,624 @@
+{
+  "schema_version": "3.0",
+  "event_type": "sales",
+  "agent": {
+    "version": "3.0.0",
+    "machine": "DESKTOP-EGBRLLG",
+    "sent_at": "2026-02-12T18:50:10.167629-03:00"
+  },
+  "store": {
+    "id_ponto_venda": 10,
+    "nome": "Loja 1 - MC Komprão Centro TJ",
+    "alias": "Loja 01",
+    "cnpj": "29094289000137"
+  },
+  "window": {
+    "from": "2026-02-07T18:50:08.290193",
+    "to": "2026-02-12T18:50:08.290193",
+    "minutes": 10
+  },
+  "turnos": [
+    {
+      "id_turno": "5B812E86-AE29-4C94-A9D7-04A2FEC2A648",
+      "sequencial": 1,
+      "fechado": false,
+      "data_hora_inicio": "2025-06-23T15:18:36.827000-03:00",
+      "data_hora_termino": null,
+      "duracao_minutos": null,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": "tijucas"
+      },
+      "responsavel": null,
+      "qtd_vendas": 0,
+      "total_vendas": "0",
+      "qtd_vendedores": 0,
+      "totais_sistema": {
+        "total": "0",
+        "qtd_vendas": 0,
+        "por_pagamento": []
+      },
+      "fechamento_declarado": null,
+      "falta_caixa": null
+    },
+    {
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "sequencial": 1,
+      "fechado": false,
+      "data_hora_inicio": "2026-01-30T09:19:47.657000-03:00",
+      "data_hora_termino": null,
+      "duracao_minutos": null,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": "tijucas"
+      },
+      "responsavel": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": "daren"
+      },
+      "qtd_vendas": 4,
+      "total_vendas": "536.47",
+      "qtd_vendedores": 0,
+      "totais_sistema": {
+        "total": "536.47",
+        "qtd_vendas": 4,
+        "por_pagamento": [
+          {
+            "id_finalizador": 1,
+            "meio": "Dinheiro",
+            "total": "224.37",
+            "qtd_vendas": 4
+          },
+          {
+            "id_finalizador": 12,
+            "meio": "Pix",
+            "total": "179.90",
+            "qtd_vendas": 1
+          },
+          {
+            "id_finalizador": 5,
+            "meio": "Cartão de débito",
+            "total": "81.20",
+            "qtd_vendas": 1
+          },
+          {
+            "id_finalizador": 4,
+            "meio": "Cartão de crédito",
+            "total": "51.00",
+            "qtd_vendas": 1
+          }
+        ]
+      },
+      "fechamento_declarado": null,
+      "falta_caixa": null
+    }
+  ],
+  "vendas": [
+    {
+      "id_operacao": 12092,
+      "canal": "HIPER_CAIXA",
+      "data_hora": "2026-02-09T22:54:53.160000-03:00",
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "itens": [
+        {
+          "line_id": 13892,
+          "line_no": 1,
+          "id_produto": 1,
+          "codigo_barras": "ALL999",
+          "nome": "Cap. Samsung J7 Prime Emborrachada Premium",
+          "qtd": "1.000",
+          "preco_unit": "0",
+          "total": "87.99",
+          "desconto": "0",
+          "vendedor": {
+            "id_usuario": 1,
+            "nome": "Thalyta",
+            "login": "thalyta"
+          }
+        }
+      ],
+      "pagamentos": [
+        {
+          "line_id": 13161,
+          "id_finalizador": 1,
+          "meio": "Dinheiro",
+          "valor": "87.99",
+          "troco": "0",
+          "parcelas": 1
+        }
+      ],
+      "total": "87.99"
+    },
+    {
+      "id_operacao": 12093,
+      "canal": "HIPER_CAIXA",
+      "data_hora": "2026-02-09T22:54:53.190000-03:00",
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "itens": [
+        {
+          "line_id": 13893,
+          "line_no": 1,
+          "id_produto": 1,
+          "codigo_barras": "ALL999",
+          "nome": "Cap. Samsung J7 Prime Emborrachada Premium",
+          "qtd": "1.000",
+          "preco_unit": "0",
+          "total": "24.10",
+          "desconto": "0",
+          "vendedor": {
+            "id_usuario": 1,
+            "nome": "Thalyta",
+            "login": "thalyta"
+          }
+        }
+      ],
+      "pagamentos": [
+        {
+          "line_id": 13162,
+          "id_finalizador": 1,
+          "meio": "Dinheiro",
+          "valor": "24.10",
+          "troco": "0",
+          "parcelas": 1
+        }
+      ],
+      "total": "24.10"
+    },
+    {
+      "id_operacao": 12094,
+      "canal": "HIPER_CAIXA",
+      "data_hora": "2026-02-09T22:54:53.210000-03:00",
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "itens": [
+        {
+          "line_id": 13894,
+          "line_no": 1,
+          "id_produto": 1,
+          "codigo_barras": "ALL999",
+          "nome": "Cap. Samsung J7 Prime Emborrachada Premium",
+          "qtd": "1.000",
+          "preco_unit": "0",
+          "total": "37.38",
+          "desconto": "0",
+          "vendedor": {
+            "id_usuario": 1,
+            "nome": "Thalyta",
+            "login": "thalyta"
+          }
+        }
+      ],
+      "pagamentos": [
+        {
+          "line_id": 13163,
+          "id_finalizador": 1,
+          "meio": "Dinheiro",
+          "valor": "37.38",
+          "troco": "0",
+          "parcelas": 1
+        }
+      ],
+      "total": "37.38"
+    }
+  ],
+  "resumo": {
+    "by_vendor": [
+      {
+        "id_usuario": 1,
+        "nome": "Thalyta",
+        "login": "thalyta",
+        "qtd_cupons": 3,
+        "total_vendido": "149.47"
+      }
+    ],
+    "by_payment": [
+      {
+        "id_finalizador": 1,
+        "meio": "Dinheiro",
+        "total": "149.47"
+      }
+    ]
+  },
+  "snapshot_turnos": [
+    {
+      "id_turno": "824B78E9-6C0E-409C-A4FD-F1F0353D010E",
+      "sequencial": 2,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-29T17:40:43.757000-03:00",
+      "data_hora_termino": "2026-01-29T22:03:07.910000-03:00",
+      "duracao_minutos": 263,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_vendas": 5,
+      "total_vendas": "295.20",
+      "qtd_vendedores": 1
+    },
+    {
+      "id_turno": "92BE7817-8A5A-4481-B595-ECA6FFA81F36",
+      "sequencial": 1,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-29T08:36:18.887000-03:00",
+      "data_hora_termino": "2026-01-29T17:01:31.030000-03:00",
+      "duracao_minutos": 505,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_vendas": 12,
+      "total_vendas": "681.90",
+      "qtd_vendedores": 2
+    },
+    {
+      "id_turno": "32568D2D-2E64-4510-BB93-65B634867BBD",
+      "sequencial": 2,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-28T16:53:16.193000-03:00",
+      "data_hora_termino": "2026-01-28T22:05:42.340000-03:00",
+      "duracao_minutos": 312,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_vendas": 6,
+      "total_vendas": "472.20",
+      "qtd_vendedores": 2
+    },
+    {
+      "id_turno": "55E27843-1FCE-4E07-89D4-F20C555E7517",
+      "sequencial": 1,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-28T10:23:32.137000-03:00",
+      "data_hora_termino": "2026-01-28T16:47:38.730000-03:00",
+      "duracao_minutos": 384,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_vendas": 11,
+      "total_vendas": "938.00",
+      "qtd_vendedores": 2
+    },
+    {
+      "id_turno": "27F93E6B-730F-49DF-AE35-0CE79B109F98",
+      "sequencial": 2,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-27T17:27:40.847000-03:00",
+      "data_hora_termino": "2026-01-27T22:00:00.633000-03:00",
+      "duracao_minutos": 273,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_vendas": 6,
+      "total_vendas": "931.40",
+      "qtd_vendedores": 2
+    },
+    {
+      "id_turno": "7D99D333-6C18-443B-B9FB-2613817ADC1D",
+      "sequencial": 1,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-27T08:12:33.637000-03:00",
+      "data_hora_termino": "2026-01-27T16:34:21.180000-03:00",
+      "duracao_minutos": 502,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_vendas": 12,
+      "total_vendas": "968.70",
+      "qtd_vendedores": 1
+    },
+    {
+      "id_turno": "7949FA96-72CB-40EA-B298-3E3EBB3B944A",
+      "sequencial": 2,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-26T17:37:24.630000-03:00",
+      "data_hora_termino": "2026-01-26T21:56:18.137000-03:00",
+      "duracao_minutos": 259,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_vendas": 3,
+      "total_vendas": "284.00",
+      "qtd_vendedores": 1
+    },
+    {
+      "id_turno": "589D31CE-32C6-4F19-8269-931279290B0E",
+      "sequencial": 1,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-26T10:48:53.197000-03:00",
+      "data_hora_termino": "2026-01-26T16:53:18.810000-03:00",
+      "duracao_minutos": 365,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_vendas": 8,
+      "total_vendas": "427.90",
+      "qtd_vendedores": 3
+    },
+    {
+      "id_turno": "22C95852-84E9-4A19-95F0-FE788D0A7831",
+      "sequencial": 1,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-25T11:12:50.290000-03:00",
+      "data_hora_termino": "2026-01-25T19:56:38.397000-03:00",
+      "duracao_minutos": 524,
+      "periodo": "MATUTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_vendas": 8,
+      "total_vendas": "413.69",
+      "qtd_vendedores": 1
+    },
+    {
+      "id_turno": "95F38854-F419-4146-AD36-8913D4C35128",
+      "sequencial": 2,
+      "fechado": true,
+      "data_hora_inicio": "2026-01-24T15:40:09.160000-03:00",
+      "data_hora_termino": "2026-01-24T21:52:52.227000-03:00",
+      "duracao_minutos": 372,
+      "periodo": "VESPERTINO",
+      "operador": {
+        "id_usuario": 12,
+        "nome": "Loja 01 - Komprao Centro/Tijucas",
+        "login": null
+      },
+      "responsavel": {
+        "id_usuario": 4,
+        "nome": "Vitor",
+        "login": null
+      },
+      "qtd_vendas": 6,
+      "total_vendas": "321.70",
+      "qtd_vendedores": 3
+    }
+  ],
+  "snapshot_vendas": [
+    {
+      "id_operacao": 12094,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-02-09T22:54:53.210000-03:00",
+      "data_hora_termino": "2026-02-09T22:54:53.210000-03:00",
+      "duracao_segundos": 0,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 1,
+        "nome": "Thalyta",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "37.38"
+    },
+    {
+      "id_operacao": 12093,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-02-09T22:54:53.190000-03:00",
+      "data_hora_termino": "2026-02-09T22:54:53.190000-03:00",
+      "duracao_segundos": 0,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 1,
+        "nome": "Thalyta",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "24.10"
+    },
+    {
+      "id_operacao": 12092,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-02-09T22:54:53.160000-03:00",
+      "data_hora_termino": "2026-02-09T22:54:53.160000-03:00",
+      "duracao_segundos": 0,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 1,
+        "nome": "Thalyta",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "87.99"
+    },
+    {
+      "id_operacao": 11095,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-30T09:55:52.990000-03:00",
+      "data_hora_termino": "2026-01-30T09:57:23.363000-03:00",
+      "duracao_segundos": 91,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_itens": 3,
+      "total_itens": "81.20"
+    },
+    {
+      "id_operacao": 11094,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-30T09:45:42.633000-03:00",
+      "data_hora_termino": "2026-01-30T09:46:22.323000-03:00",
+      "duracao_segundos": 40,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_itens": 2,
+      "total_itens": "74.90"
+    },
+    {
+      "id_operacao": 11093,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-30T09:44:16.837000-03:00",
+      "data_hora_termino": "2026-01-30T09:44:48.527000-03:00",
+      "duracao_segundos": 32,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_itens": 2,
+      "total_itens": "51.00"
+    },
+    {
+      "id_operacao": 11092,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-30T09:19:47.667000-03:00",
+      "data_hora_termino": "2026-01-30T09:20:29.750000-03:00",
+      "duracao_segundos": 42,
+      "id_turno": "6A91E9F2-FF8C-4E40-BA90-8BF04B889A57",
+      "turno_seq": 1,
+      "vendedor": {
+        "id_usuario": 80,
+        "nome": "Daren",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "179.90"
+    },
+    {
+      "id_operacao": 11090,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-29T20:34:11.973000-03:00",
+      "data_hora_termino": "2026-01-29T20:34:18.157000-03:00",
+      "duracao_segundos": 7,
+      "id_turno": "824B78E9-6C0E-409C-A4FD-F1F0353D010E",
+      "turno_seq": 2,
+      "vendedor": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "29.00"
+    },
+    {
+      "id_operacao": 11089,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-29T19:05:30.650000-03:00",
+      "data_hora_termino": "2026-01-29T19:05:37.540000-03:00",
+      "duracao_segundos": 7,
+      "id_turno": "824B78E9-6C0E-409C-A4FD-F1F0353D010E",
+      "turno_seq": 2,
+      "vendedor": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_itens": 1,
+      "total_itens": "25.00"
+    },
+    {
+      "id_operacao": 11088,
+      "canal": "HIPER_CAIXA",
+      "data_hora_inicio": "2026-01-29T18:52:52.310000-03:00",
+      "data_hora_termino": "2026-01-29T18:53:27.960000-03:00",
+      "duracao_segundos": 35,
+      "id_turno": "824B78E9-6C0E-409C-A4FD-F1F0353D010E",
+      "turno_seq": 2,
+      "vendedor": {
+        "id_usuario": 92,
+        "nome": "Vitoria",
+        "login": null
+      },
+      "qtd_itens": 2,
+      "total_itens": "51.20"
+    }
+  ],
+  "ops": {
+    "count": 3,
+    "ids": [
+      12092,
+      12093,
+      12094
+    ],
+    "loja_count": 0,
+    "loja_ids": []
+  },
+  "integrity": {
+    "sync_id": "3aa4250f604bbb28233440576550f49e545be6d3860d40d9f4d579fc32939e55",
+    "warnings": []
+  }
+}

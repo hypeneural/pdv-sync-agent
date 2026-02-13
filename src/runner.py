@@ -1,14 +1,15 @@
 """
-Main runner that orchestrates the sync process (v2.0).
+Main runner that orchestrates the sync process (v3.0).
 
 Flow:
   1. Process outbox queue (retry failed payloads)
   2. Calculate sync window
-  3. Gather turno-level data (sistema vs declarado)
-  4. Gather individual sale details (items + payments)
-  5. Build aggregated resumo
-  6. Send JSON payload
-  7. Update state on success
+  3. Gather turno-level data (sistema vs declarado) — PDV only
+  4. Gather individual sale details (items + payments) — PDV + Loja
+  5. Build aggregated resumo — PDV + Loja combined
+  6. Build snapshots (últimas vendas) — PDV + Loja combined
+  7. Send JSON payload
+  8. Update state on success
 """
 
 from datetime import datetime
@@ -16,16 +17,21 @@ from typing import Optional
 
 from loguru import logger
 
-from .db import DatabaseConnection, create_db_connection
+from .db import DatabaseConnection, create_db_connection, create_gestao_db_connection
 from .payload import (
     SyncPayload,
     TurnoDetail,
+    TurnoSnapshot,
+    VendaSnapshot,
     SaleDetail,
+    OperatorInfo,
     build_payload,
     build_turno_detail,
     build_sale_details,
+    _aware,
 )
 from .queries import QueryExecutor, create_query_executor
+from .queries_gestao import GestaoQueryExecutor, create_gestao_query_executor
 from .sender import HttpSender, SendResult, create_sender
 from .settings import Settings
 from .state import StateManager, WindowCalculator, create_state_manager, create_window_calculator
@@ -39,6 +45,8 @@ class SyncRunner:
         settings: Settings,
         db: DatabaseConnection,
         queries: QueryExecutor,
+        gestao_db: DatabaseConnection,
+        gestao_queries: GestaoQueryExecutor,
         sender: HttpSender,
         state_manager: StateManager,
         window_calculator: WindowCalculator,
@@ -46,9 +54,12 @@ class SyncRunner:
         self.settings = settings
         self.db = db
         self.queries = queries
+        self.gestao_db = gestao_db
+        self.gestao_queries = gestao_queries
         self.sender = sender
         self.state_manager = state_manager
         self.window_calculator = window_calculator
+        self._gestao_warning: Optional[str] = None
 
     def run(self) -> bool:
         """
@@ -63,7 +74,7 @@ class SyncRunner:
         Returns True if sync was successful, False otherwise.
         """
         logger.info("=" * 60)
-        logger.info("Starting PDV Sync v2.0")
+        logger.info("Starting PDV Sync v3.0")
         logger.info("=" * 60)
 
         try:
@@ -82,11 +93,20 @@ class SyncRunner:
                 self.window_calculator.mark_success(dt_to)
                 return True  # Not an error, just no data
 
-            # Step 3.5: Skip sending if no operations (saves bandwidth)
-            if payload.ops.count == 0:
-                logger.info("No new sales in window — skipping POST")
+            # Step 3.5: Decide if POST is needed
+            # POST if: has sales (PDV or Loja) OR a turno closed in this window
+            has_sales = payload.ops.count > 0 or payload.ops.loja_count > 0
+            has_closed_turno = any(t.fechado for t in payload.turnos)
+
+            if not has_sales and not has_closed_turno:
+                logger.info("No sales and no turno closure — skipping POST")
                 self.window_calculator.mark_success(dt_to)
                 return True
+
+            if has_closed_turno and not has_sales:
+                logger.info(
+                    "No new sales but turno CLOSED — sending closure data"
+                )
 
             # Step 4: Send payload
             result = self._send_payload(payload)
@@ -110,35 +130,80 @@ class SyncRunner:
     def _build_payload(
         self, dt_from: datetime, dt_to: datetime
     ) -> Optional[SyncPayload]:
-        """Build the sync payload v2.0 from database queries."""
-        logger.info("Gathering data from database")
+        """Build the sync payload v3.0 from both databases."""
+        logger.info("Gathering data from databases (PDV + Gestão)")
+
+        store_id = self.settings.store_id_ponto_venda
 
         # ── Store Info ──
-        store_info = self.queries.get_store_info(self.settings.store_id_ponto_venda)
-        store_name = store_info["nome"] if store_info else f"PDV {self.settings.store_id_ponto_venda}"
+        store_info = self.queries.get_store_info(store_id)
+        store_name = store_info["nome"] if store_info else f"PDV {store_id}"
+        store_cnpj = store_info.get("cnpj") if store_info else None
 
-        # ── Operation IDs (for deduplication) ──
+        # ══════════════════════════════════════
+        # PDV (HiperPdv / Caixa) data
+        # ══════════════════════════════════════
         ops_ids = self.queries.get_operation_ids(dt_from, dt_to)
-
         if not ops_ids:
-            logger.info("No operations found in window")
+            logger.info("[PDV] No operations found in window")
 
-        # ── Turnos with closure data ──
+        # Turnos (PDV only — Loja does not have own turnos)
         turnos = self._build_turnos(dt_from, dt_to)
 
-        # ── Individual sale details ──
-        vendas = self._build_sale_details(dt_from, dt_to)
+        # Individual PDV sale details (marked as HIPER_CAIXA)
+        vendas_pdv = self._build_sale_details(dt_from, dt_to, canal="HIPER_CAIXA")
 
-        # ── Aggregated data for resumo ──
-        sales_by_vendor = self.queries.get_sales_by_vendor(dt_from, dt_to)
-        payments_by_method = self.queries.get_payments_by_method(dt_from, dt_to)
+        # PDV aggregated data
+        sales_by_vendor_pdv = self.queries.get_sales_by_vendor(dt_from, dt_to)
+        payments_by_method_pdv = self.queries.get_payments_by_method(dt_from, dt_to)
+
+        # ══════════════════════════════════════
+        # Gestão (Hiper / Loja) data
+        # ══════════════════════════════════════
+        try:
+            loja_ids = self.gestao_queries.get_loja_operation_ids(
+                dt_from, dt_to, store_id
+            )
+            if loja_ids:
+                logger.info(f"[Gestão] Found {len(loja_ids)} Loja operations in window")
+            else:
+                logger.info("[Gestão] No Loja operations in window")
+
+            # Individual Loja sale details (marked as HIPER_LOJA)
+            vendas_loja = self._build_loja_sale_details(dt_from, dt_to)
+
+            # Loja aggregated data
+            sales_by_vendor_loja = self.gestao_queries.get_loja_sales_by_vendor(
+                dt_from, dt_to, store_id
+            )
+            payments_by_method_loja = self.gestao_queries.get_loja_payments_by_method(
+                dt_from, dt_to, store_id
+            )
+        except Exception as e:
+            logger.warning(f"[Gestão] Failed to fetch Loja data: {e}")
+            self._gestao_warning = f"GESTAO_DB_FAILURE: {str(e)[:200]}"
+            loja_ids = []
+            vendas_loja = []
+            sales_by_vendor_loja = []
+            payments_by_method_loja = []
+
+        # ══════════════════════════════════════
+        # Merge both channels
+        # ══════════════════════════════════════
+        vendas = vendas_pdv + vendas_loja
+        sales_by_vendor = sales_by_vendor_pdv + sales_by_vendor_loja
+        payments_by_method = payments_by_method_pdv + payments_by_method_loja
+
+        # ── Snapshots for verification (PR-11) — both channels ──
+        snapshot_turnos = self._build_turno_snapshots()
+        snapshot_vendas = self._build_venda_snapshots_combined()
 
         # ── Warnings ──
         warnings = self._check_warnings(sales_by_vendor, payments_by_method)
 
         # ── Build payload ──
         payload = build_payload(
-            store_id=self.settings.store_id_ponto_venda,
+            store_id=store_id,
             store_name=store_name,
             store_alias=self.settings.store_alias,
             dt_from=dt_from,
@@ -149,15 +214,23 @@ class SyncRunner:
             ops_ids=ops_ids,
             sales_by_vendor=sales_by_vendor,
             payments_by_method=payments_by_method,
+            snapshot_turnos=snapshot_turnos,
+            snapshot_vendas=snapshot_vendas,
             warnings=warnings,
+            loja_ids=loja_ids,
+            store_cnpj=store_cnpj,
         )
 
         # Log payload summary
-        logger.info(f"Payload built: {payload.ops.count} operations")
-        logger.info(f"  - Turnos: {len(payload.turnos)}")
-        logger.info(f"  - Vendas (extrato): {len(payload.vendas)}")
+        pdv_count = len(vendas_pdv)
+        loja_count = len(vendas_loja)
+        logger.info(f"Payload built: {payload.ops.count} PDV ops + {payload.ops.loja_count} Loja ops")
+        logger.info(f"  - Turnos: {len(payload.turnos)} (PDV only)")
+        logger.info(f"  - Vendas PDV: {pdv_count} | Vendas Loja: {loja_count} | Total: {len(payload.vendas)}")
         logger.info(f"  - Vendors (resumo): {len(payload.resumo.by_vendor)}")
         logger.info(f"  - Payment methods (resumo): {len(payload.resumo.by_payment)}")
+        logger.info(f"  - Snapshot turnos: {len(payload.snapshot_turnos)}")
+        logger.info(f"  - Snapshot vendas: {len(payload.snapshot_vendas)}")
         if warnings:
             for w in warnings:
                 logger.warning(f"  ! {w}")
@@ -168,7 +241,9 @@ class SyncRunner:
         self, dt_from: datetime, dt_to: datetime
     ) -> list[TurnoDetail]:
         """Build turno details with sistema totals and closure data."""
-        turnos_raw = self.queries.get_turnos_in_window(dt_from, dt_to)
+        turnos_raw = self.queries.get_turnos_with_activity(
+            dt_from, dt_to, self.settings.store_id_ponto_venda
+        )
 
         if not turnos_raw:
             # Fallback: get current turno (may not have sales in window)
@@ -200,28 +275,173 @@ class SyncRunner:
                         f"fechado=True, {len(closure_values)} closure entries"
                     )
 
+            # Get responsavel (principal vendor) for this turno
+            responsavel = self.queries.get_turno_responsavel(id_turno_str)
+
             detail = build_turno_detail(
                 turno=turno,
                 system_payments=system_payments,
                 closure_values=closure_values,
                 shortage_values=shortage_values,
+                responsavel=responsavel,
             )
             turno_details.append(detail)
 
         return turno_details
 
+    def _build_turno_snapshots(self) -> list[TurnoSnapshot]:
+        """Build turno snapshots (last 10 closed) for verification."""
+        raw = self.queries.get_turno_snapshot(
+            self.settings.store_id_ponto_venda, limit=10
+        )
+        snapshots = []
+        for row in raw:
+            # Calculate period from start hour
+            inicio = row.get("data_hora_inicio")
+            periodo = None
+            if inicio:
+                hora = inicio.hour if hasattr(inicio, 'hour') else 0
+                if hora < 12:
+                    periodo = "MATUTINO"
+                elif hora < 18:
+                    periodo = "VESPERTINO"
+                else:
+                    periodo = "NOTURNO"
+                inicio = _aware(inicio)
+
+            termino = row.get("data_hora_termino")
+            if termino:
+                termino = _aware(termino)
+
+            snapshots.append(
+                TurnoSnapshot(
+                    id_turno=str(row["id_turno"]) if row.get("id_turno") else None,
+                    sequencial=row.get("sequencial"),
+                    fechado=bool(row.get("fechado", True)),
+                    data_hora_inicio=inicio,
+                    data_hora_termino=termino,
+                    duracao_minutos=row.get("duracao_minutos"),
+                    periodo=periodo,
+                    operador=OperatorInfo(
+                        id_usuario=row.get("id_operador"),
+                        nome=row.get("nome_operador"),
+                    ),
+                    responsavel=OperatorInfo(
+                        id_usuario=row.get("id_responsavel"),
+                        nome=row.get("nome_responsavel"),
+                    ),
+                    qtd_vendas=row.get("qtd_vendas", 0),
+                    total_vendas=row.get("total_vendas", 0),
+                    qtd_vendedores=row.get("qtd_vendedores", 0),
+                )
+            )
+
+        logger.info(f"Built {len(snapshots)} turno snapshots")
+        return snapshots
+
+    def _build_venda_snapshots_combined(self) -> list[VendaSnapshot]:
+        """
+        Build venda snapshots from BOTH channels (últimas vendas gerais).
+        Combines last 10 PDV + last 10 Loja, sorts by date, takes top 10.
+        """
+        store_id = self.settings.store_id_ponto_venda
+
+        # ── PDV snapshots ──
+        pdv_raw = self.queries.get_vendas_snapshot(store_id, limit=10)
+        pdv_snapshots = []
+        for row in pdv_raw:
+            pdv_snapshots.append(
+                VendaSnapshot(
+                    id_operacao=row["id_operacao"],
+                    canal="HIPER_CAIXA",
+                    data_hora_inicio=_aware(row.get("data_hora_inicio")),
+                    data_hora_termino=_aware(row.get("data_hora_termino")),
+                    duracao_segundos=row.get("duracao_segundos"),
+                    id_turno=str(row["id_turno"]) if row.get("id_turno") else None,
+                    turno_seq=row.get("turno_seq"),
+                    vendedor=OperatorInfo(
+                        id_usuario=row.get("id_vendedor"),
+                        nome=row.get("nome_vendedor"),
+                    ),
+                    qtd_itens=row.get("qtd_itens", 0),
+                    total_itens=row.get("total_itens", 0),
+                )
+            )
+
+        # ── Loja snapshots ──
+        loja_snapshots = []
+        try:
+            loja_raw = self.gestao_queries.get_loja_vendas_snapshot(store_id, limit=10)
+            for row in loja_raw:
+                loja_snapshots.append(
+                    VendaSnapshot(
+                        id_operacao=row["id_operacao"],
+                        canal="HIPER_LOJA",
+                        data_hora_inicio=_aware(row.get("data_hora_inicio")),
+                        data_hora_termino=_aware(row.get("data_hora_termino")),
+                        duracao_segundos=row.get("duracao_segundos"),
+                        id_turno=str(row["id_turno"]) if row.get("id_turno") else None,
+                        turno_seq=None,  # Loja doesn't have turno_seq
+                        vendedor=OperatorInfo(
+                            id_usuario=row.get("id_vendedor"),
+                            nome=row.get("nome_vendedor"),
+                        ),
+                        qtd_itens=row.get("qtd_itens", 0),
+                        total_itens=row.get("total_itens", 0),
+                    )
+                )
+        except Exception as e:
+            logger.warning(f"[Gestão] Failed to fetch Loja snapshots: {e}")
+
+        # ── Combine and sort by data_hora_termino DESC, take top 10 ──
+        all_snapshots = pdv_snapshots + loja_snapshots
+        all_snapshots.sort(
+            key=lambda s: s.data_hora_termino or datetime.min,
+            reverse=True,
+        )
+        combined = all_snapshots[:10]
+
+        pdv_count = sum(1 for s in combined if s.canal == "HIPER_CAIXA")
+        loja_count = sum(1 for s in combined if s.canal == "HIPER_LOJA")
+        logger.info(
+            f"Built {len(combined)} venda snapshots "
+            f"(PDV: {pdv_count}, Loja: {loja_count})"
+        )
+        return combined
+
     def _build_sale_details(
-        self, dt_from: datetime, dt_to: datetime
+        self, dt_from: datetime, dt_to: datetime,
+        canal: str = "HIPER_CAIXA",
     ) -> list[SaleDetail]:
-        """Build individual sale details with items and payments."""
+        """Build individual PDV sale details with items and payments."""
         sale_items = self.queries.get_sale_items(dt_from, dt_to)
         sale_payments = self.queries.get_sale_payments(dt_from, dt_to)
 
         if not sale_items:
             return []
 
-        vendas = build_sale_details(sale_items, sale_payments)
-        logger.info(f"Built {len(vendas)} individual sale details")
+        vendas = build_sale_details(sale_items, sale_payments, canal=canal)
+        logger.info(f"Built {len(vendas)} individual {canal} sale details")
+        return vendas
+
+    def _build_loja_sale_details(
+        self, dt_from: datetime, dt_to: datetime,
+    ) -> list[SaleDetail]:
+        """Build individual Loja sale details with items and payments."""
+        store_id = self.settings.store_id_ponto_venda
+
+        sale_items = self.gestao_queries.get_loja_sale_items(
+            dt_from, dt_to, store_id
+        )
+        sale_payments = self.gestao_queries.get_loja_sale_payments(
+            dt_from, dt_to, store_id
+        )
+
+        if not sale_items:
+            return []
+
+        vendas = build_sale_details(sale_items, sale_payments, canal="HIPER_LOJA")
+        logger.info(f"Built {len(vendas)} individual HIPER_LOJA sale details")
         return vendas
 
     def _check_warnings(
@@ -231,6 +451,11 @@ class SyncRunner:
     ) -> list[str]:
         """Check for any data quality warnings."""
         warnings = []
+
+        # Include Gestão DB failure warning if present
+        if self._gestao_warning:
+            warnings.append(self._gestao_warning)
+            self._gestao_warning = None  # Reset for next cycle
 
         # Check for NULL vendors
         null_vendors = [v for v in sales_by_vendor if v.get("id_usuario_vendedor") is None]
@@ -253,8 +478,14 @@ class SyncRunner:
 
 def create_runner(settings: Settings) -> SyncRunner:
     """Factory function to create a fully configured SyncRunner."""
+    # PDV (HiperPdv) connection
     db = create_db_connection(settings)
     queries = create_query_executor(db)
+
+    # Gestão (Hiper) connection
+    gestao_db = create_gestao_db_connection(settings)
+    gestao_queries = create_gestao_query_executor(gestao_db)
+
     sender = create_sender(
         endpoint=settings.api_endpoint,
         token=settings.api_token,
@@ -271,6 +502,8 @@ def create_runner(settings: Settings) -> SyncRunner:
         settings=settings,
         db=db,
         queries=queries,
+        gestao_db=gestao_db,
+        gestao_queries=gestao_queries,
         sender=sender,
         state_manager=state_manager,
         window_calculator=window_calculator,

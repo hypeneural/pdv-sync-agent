@@ -1,7 +1,7 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    PDV Sync Agent - Installer v2.0 (PowerShell)
+    PDV Sync Agent - Installer v3.0 (PowerShell)
 .DESCRIPTION
     Instala ODBC 17, cria usuario SQL, gera .env, copia binarios,
     cria Task Scheduler e valida tudo rodando como SYSTEM.
@@ -33,6 +33,7 @@ $ExePath = Join-Path $InstallDir 'pdv-sync-agent.exe'
 $DefaultSqlPwd = 'PdvSync2026!'
 $DefaultSqlUser = 'pdv_sync'
 $DefaultDb = 'HiperPdv'
+$DefaultDbGestao = 'Hiper'
 
 # ============================================================
 # HELPERS
@@ -69,7 +70,7 @@ function Write-Fail {
 # ============================================================
 Write-Host ''
 Write-Host '============================================================' -ForegroundColor White
-Write-Host '  PDV Sync Agent - Instalador v2.0' -ForegroundColor White
+Write-Host '  PDV Sync Agent - Instalador v3.0' -ForegroundColor White
 Write-Host '============================================================' -ForegroundColor White
 Write-Host ''
 Write-Host "  Binario : $InstallDir"
@@ -199,10 +200,18 @@ try {
     $conn.ChangeDatabase($DefaultDb)
     $cmd.CommandText = $tsqlUser
     $cmd.ExecuteNonQuery() | Out-Null
+    Write-Host "    db_datareader concedido no $DefaultDb" -ForegroundColor White
+
+    # Criar user no Hiper (Gestao) - necessario para vendas Loja
+    $conn.ChangeDatabase($DefaultDbGestao)
+    $cmd.CommandText = $tsqlUser
+    $cmd.ExecuteNonQuery() | Out-Null
+    Write-Host "    db_datareader concedido no $DefaultDbGestao" -ForegroundColor White
+
     $conn.Close()
 
     $sqlCreated = $true
-    Write-Ok "Usuario '$DefaultSqlUser' pronto com db_datareader no $DefaultDb"
+    Write-Ok "Usuario '$DefaultSqlUser' pronto com db_datareader em $DefaultDb + $DefaultDbGestao"
 
 }
 catch {
@@ -228,10 +237,15 @@ catch {
         $conn2.ChangeDatabase($DefaultDb)
         $cmd2.CommandText = $tsqlUser
         $cmd2.ExecuteNonQuery() | Out-Null
+
+        # Criar user no Hiper (Gestao)
+        $conn2.ChangeDatabase($DefaultDbGestao)
+        $cmd2.CommandText = $tsqlUser
+        $cmd2.ExecuteNonQuery() | Out-Null
         $conn2.Close()
 
         $sqlCreated = $true
-        Write-Ok "Usuario '$DefaultSqlUser' criado via SQL Auth"
+        Write-Ok "Usuario '$DefaultSqlUser' criado via SQL Auth ($DefaultDb + $DefaultDbGestao)"
     }
     catch {
         Write-Fail "Nao foi possivel criar usuario: $($_.Exception.Message)"
@@ -332,7 +346,7 @@ else {
 
     $envLines = @(
         '# =========================================================='
-        '# PDV Sync Agent v2.0 - Configuracao de Producao'
+        '# PDV Sync Agent v3.0 - Configuracao de Producao'
         "# Gerado automaticamente em $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
         '# =========================================================='
         ''
@@ -340,6 +354,7 @@ else {
         'SQL_SERVER_HOST=localhost'
         "SQL_SERVER_INSTANCE=$instName"
         "SQL_DATABASE=$DefaultDb"
+        "SQL_DATABASE_GESTAO=$DefaultDbGestao"
         'SQL_DRIVER=ODBC Driver 17 for SQL Server'
         'SQL_ENCRYPT=no'
         'SQL_TRUST_SERVER_CERT=yes'
@@ -428,7 +443,7 @@ $xmlLines = @(
     '<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">'
     '  <RegistrationInfo>'
     "    <URI>\$TaskName</URI>"
-    '    <Description>PDV Sync Agent v2.0 - Sincronizacao automatica de vendas</Description>'
+    '    <Description>PDV Sync Agent v3.0 - Sincronizacao automatica de vendas</Description>'
     '  </RegistrationInfo>'
     '  <Triggers>'
     '    <BootTrigger>'
@@ -481,6 +496,69 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Write-Ok "Tarefa '$TaskName' criada (boot + restart on fail)"
+
+# ---- Shutdown Task (last-chance sync) ----
+$ShutdownTaskName = 'PDVSyncAgent_Shutdown'
+$shutdownScript = Join-Path $DataDir 'on_shutdown.ps1'
+
+# Copy shutdown script
+$srcShutdown = Join-Path $SourceDir 'on_shutdown.ps1'
+if (Test-Path $srcShutdown) {
+    Copy-Item $srcShutdown $shutdownScript -Force
+}
+
+try { schtasks /delete /tn $ShutdownTaskName /f 2>&1 | Out-Null } catch {}
+
+$shutdownXmlLines = @(
+    '<?xml version="1.0" encoding="UTF-16"?>'
+    '<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">'
+    '  <RegistrationInfo>'
+    "    <URI>\$ShutdownTaskName</URI>"
+    '    <Description>PDV Sync Agent - Last-chance sync on shutdown/logoff</Description>'
+    '  </RegistrationInfo>'
+    '  <Triggers>'
+    '    <EventTrigger>'
+    '      <Enabled>true</Enabled>'
+    '      <Subscription>&lt;QueryList&gt;&lt;Query Id="0" Path="System"&gt;&lt;Select Path="System"&gt;*[System[Provider[@Name=''User32''] and (EventID=1074)]]&lt;/Select&gt;&lt;/Query&gt;&lt;/QueryList&gt;</Subscription>'
+    '    </EventTrigger>'
+    '  </Triggers>'
+    '  <Principals>'
+    '    <Principal id="Author">'
+    '      <UserId>S-1-5-18</UserId>'
+    '      <RunLevel>HighestAvailable</RunLevel>'
+    '    </Principal>'
+    '  </Principals>'
+    '  <Settings>'
+    '    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>'
+    '    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>'
+    '    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>'
+    '    <AllowHardTerminate>true</AllowHardTerminate>'
+    '    <ExecutionTimeLimit>PT30S</ExecutionTimeLimit>'
+    '    <Enabled>true</Enabled>'
+    '    <Hidden>true</Hidden>'
+    '  </Settings>'
+    '  <Actions Context="Author">'
+    '    <Exec>'
+    "      <Command>powershell.exe</Command>"
+    "      <Arguments>-ExecutionPolicy Bypass -File `"$shutdownScript`"</Arguments>"
+    "      <WorkingDirectory>$InstallDir</WorkingDirectory>"
+    '    </Exec>'
+    '  </Actions>'
+    '</Task>'
+)
+
+$shutdownXmlContent = $shutdownXmlLines -join "`r`n"
+$shutdownXmlPath = Join-Path $DataDir 'task_shutdown.xml'
+[IO.File]::WriteAllText($shutdownXmlPath, $shutdownXmlContent, [Text.Encoding]::Unicode)
+
+$result = schtasks /create /tn $ShutdownTaskName /xml $shutdownXmlPath /f 2>&1
+if ($LASTEXITCODE -eq 0) {
+    Write-Ok "Tarefa '$ShutdownTaskName' criada (shutdown/logoff trigger)"
+}
+else {
+    Write-Host "    AVISO: Nao foi possivel criar tarefa de shutdown: $result" -ForegroundColor Yellow
+    Write-Host "    (Agente funcionara normalmente, mas sem sync no desligamento)" -ForegroundColor Yellow
+}
 
 # ============================================================
 # STEP 8: Validacao real (roda como SYSTEM)

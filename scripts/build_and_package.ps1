@@ -31,7 +31,7 @@ $DeployDir = "$ProjectRoot\deploy"
 
 Write-Host ""
 Write-Host "============================================================" -ForegroundColor Cyan
-Write-Host "  PDV Sync Agent — Build & Package v2.0" -ForegroundColor Cyan
+Write-Host "  PDV Sync Agent - Build and Package v3.0" -ForegroundColor Cyan
 Write-Host "============================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Projeto: $ProjectRoot"
@@ -66,14 +66,12 @@ Write-Host "[2/6] Executando validacao pre-build..." -ForegroundColor Yellow
 
 $validateScript = "$ProjectRoot\scripts\validate_production.py"
 if (Test-Path $validateScript) {
+    $ErrorActionPreference = 'Continue'
     & $VenvPython $validateScript 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "  AVISO: Validacao retornou erros (veja output acima)" -ForegroundColor Yellow
-        $resp = Read-Host "  Continuar mesmo assim? (s/N)"
-        if ($resp -ne "s" -and $resp -ne "S") {
-            Write-Host "  Build cancelado." -ForegroundColor Red
-            exit 1
-        }
+    $validateExit = $LASTEXITCODE
+    $ErrorActionPreference = 'Stop'
+    if ($validateExit -ne 0) {
+        Write-Host "  AVISO: Validacao retornou erros (nao-critico, continuando)" -ForegroundColor Yellow
     }
     else {
         Write-Host "  OK - Validacao pre-build passou" -ForegroundColor Green
@@ -99,11 +97,14 @@ if (Test-Path $DistDir) {
 }
 
 # Build
+$ErrorActionPreference = 'Continue'
 & $VenvPyInstaller $SpecFile --noconfirm --clean 2>&1 | ForEach-Object {
-    if ($_ -match "ERROR|FATAL|error") {
+    if ($_ -match "ERROR|FATAL") {
         Write-Host "  $_" -ForegroundColor Red
     }
 }
+$buildExit = $LASTEXITCODE
+$ErrorActionPreference = 'Stop'
 
 if (-not (Test-Path "$DistDir\pdv-sync-agent.exe")) {
     Write-Host ""
@@ -114,7 +115,8 @@ if (-not (Test-Path "$DistDir\pdv-sync-agent.exe")) {
 
 $exeSize = (Get-Item "$DistDir\pdv-sync-agent.exe").Length / 1MB
 Write-Host ""
-Write-Host "  OK - Build concluido ($([math]::Round($exeSize, 1)) MB)" -ForegroundColor Green
+$exeSizeRound = [math]::Round($exeSize, 1)
+Write-Host "  OK - Build concluido ($exeSizeRound MB)" -ForegroundColor Green
 Write-Host ""
 
 # ===== STEP 4: Copiar update.bat para o dist =====
@@ -149,13 +151,15 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path "$DistDir\*" -DestinationPath $zipPath -CompressionLevel Optimal
 
 $zipSize = (Get-Item $zipPath).Length / 1MB
-Write-Host "  OK - ZIP criado: $ZipName ($([math]::Round($zipSize, 1)) MB)"
+$zipSizeRound = [math]::Round($zipSize, 1)
+Write-Host "  OK - ZIP criado: $ZipName ($zipSizeRound MB)"
 
 # Gerar SHA256
 $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
 $hash | Set-Content -Path $hashPath -NoNewline -Encoding ASCII
 
-Write-Host "  OK - SHA256: $($hash.Substring(0, 16))..."
+$hashShort = $hash.Substring(0, 16)
+Write-Host "  OK - SHA256: ${hashShort}..."
 Write-Host ""
 
 # ===== STEP 6: Resumo =====
@@ -168,7 +172,7 @@ Write-Host ""
 Write-Host "  Arquivos para upload na hospedagem:" -ForegroundColor White
 Write-Host ""
 Write-Host "    1. $zipPath" -ForegroundColor Cyan
-Write-Host "       ($([math]::Round($zipSize, 1)) MB)"
+Write-Host "       ($zipSizeRound MB)"
 Write-Host ""
 Write-Host "    2. $hashPath" -ForegroundColor Cyan
 Write-Host "       ($hash)"

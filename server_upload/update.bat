@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM PDV Sync Agent - Updater (v1.1 — com hash + rollback)
+REM PDV Sync Agent - Updater (v1.2 — com hash + rollback)
 REM =============================================================================
 REM Baixa a versao mais recente, valida integridade, faz backup antes de trocar.
 REM Se a nova versao falhar ao iniciar, reverte automaticamente do backup.
@@ -32,7 +32,7 @@ set "HASH_URL=http://erp.maiscapinhas.com.br/download/PDVSyncAgent_latest.sha256
 
 echo.
 echo ============================================================
-echo   PDV Sync Agent - Atualizador v1.1
+echo   PDV Sync Agent - Atualizador v1.2
 echo ============================================================
 echo.
 
@@ -125,11 +125,30 @@ schtasks /end /tn "%TASK_NAME%" >nul 2>&1
 timeout /t 3 /nobreak >nul
 
 REM Remover exe e _internal antigos
-del /q "%INSTALL_DIR%\pdv-sync-agent.exe" >nul 2>&1
-if exist "%INSTALL_DIR%\_internal" rmdir /s /q "%INSTALL_DIR%\_internal" >nul 2>&1
+echo    Removendo arquivos antigos...
+if exist "%INSTALL_DIR%\pdv-sync-agent.exe" (
+    del /f /q "%INSTALL_DIR%\pdv-sync-agent.exe"
+    if exist "%INSTALL_DIR%\pdv-sync-agent.exe" (
+        echo    ERRO: Nao foi possivel remover pdv-sync-agent.exe. O processo ainda esta rodando?
+        goto :rollback
+    )
+)
+
+if exist "%INSTALL_DIR%\_internal" (
+    rmdir /s /q "%INSTALL_DIR%\_internal"
+    if exist "%INSTALL_DIR%\_internal" (
+        echo    ERRO: Nao foi possivel remover a pasta _internal.
+        goto :rollback
+    )
+)
 
 REM Copiar novos
-xcopy /e /i /y "%TMP_DIR%\pkg\*" "%INSTALL_DIR%\" >nul 2>&1
+echo    Copiando novos arquivos...
+xcopy /e /i /y "%TMP_DIR%\pkg\*" "%INSTALL_DIR%\"
+if %errorlevel% neq 0 (
+    echo    ERRO: Falha ao copiar arquivos!
+    goto :rollback
+)
 echo    OK.
 
 REM ===== 6. Reiniciar e verificar =====
@@ -145,14 +164,18 @@ if %errorlevel% equ 0 (
 ) else (
     echo.
     echo    AVISO: Agente pode nao ter iniciado corretamente!
+    echo.
+    echo    AVISO: Agente pode nao ter iniciado corretamente!
     echo    Tentando rollback do backup...
     
+    :rollback
     REM Rollback
+    echo    *** INICIANDO ROLLBACK ***
     schtasks /end /tn "%TASK_NAME%" >nul 2>&1
     timeout /t 2 /nobreak >nul
     
-    del /q "%INSTALL_DIR%\pdv-sync-agent.exe" >nul 2>&1
-    if exist "%INSTALL_DIR%\_internal" rmdir /s /q "%INSTALL_DIR%\_internal" >nul 2>&1
+    if exist "%INSTALL_DIR%\pdv-sync-agent.exe" del /f /q "%INSTALL_DIR%\pdv-sync-agent.exe"
+    if exist "%INSTALL_DIR%\_internal" rmdir /s /q "%INSTALL_DIR%\_internal"
     
     xcopy /e /i /y "%BACKUP_DIR%\prev\*" "%INSTALL_DIR%\" >nul 2>&1
     schtasks /run /tn "%TASK_NAME%"

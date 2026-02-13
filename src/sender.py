@@ -22,6 +22,8 @@ from tenacity import (
     before_sleep_log,
 )
 
+from . import SCHEMA_VERSION
+
 try:
     import orjson
 
@@ -198,7 +200,7 @@ class HttpSender:
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json",
             "Accept": "application/json",
-            "X-PDV-Schema-Version": "2.0",
+            "X-PDV-Schema-Version": SCHEMA_VERSION,
         }
 
     @retry(

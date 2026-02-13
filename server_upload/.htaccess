@@ -1,0 +1,14 @@
+# PDV Sync Agent - Download Directory
+# http://erp.maiscapinhas.com.br/download/
+
+<FilesMatch "\.(zip|sha256|bat)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+</FilesMatch>
+
+Options -Indexes
+<FilesMatch "\.(zip|sha256|bat|msi)$">
+    ForceType application/octet-stream
+    Header set Content-Disposition attachment
+</FilesMatch>

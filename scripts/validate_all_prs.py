@@ -128,11 +128,11 @@ check("sync_id is deterministic (same inputs → same hash)",
 # ================================================================
 section("PR-03: Schema Version no Payload")
 
-check("SCHEMA_VERSION constant is '2.0'", SCHEMA_VERSION == "2.0")
+check("SCHEMA_VERSION constant is '3.0'", SCHEMA_VERSION == "3.0")
 check("payload has schema_version field",
       hasattr(payload, "schema_version"))
-check("schema_version value is '2.0'",
-      payload_dict.get("schema_version") == "2.0")
+check("schema_version value is '3.0'",
+      payload_dict.get("schema_version") == "3.0")
 
 # Check header
 from src.sender import HttpSender
@@ -141,8 +141,8 @@ sender.token = "test-token"
 headers = sender._get_headers()
 check("X-PDV-Schema-Version header exists",
       "X-PDV-Schema-Version" in headers)
-check("X-PDV-Schema-Version is '2.0'",
-      headers.get("X-PDV-Schema-Version") == "2.0")
+check("X-PDV-Schema-Version is '3.0'",
+      headers.get("X-PDV-Schema-Version") == "3.0")
 
 
 # ================================================================

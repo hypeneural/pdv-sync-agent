@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM PDV Sync Agent - Installer v2.0 (Launcher)
+REM PDV Sync Agent - Installer v3.0 (Launcher)
 REM =============================================================================
 REM Este script apenas lanca o instalador PowerShell.
 REM Toda a logica esta em install.ps1.

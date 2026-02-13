@@ -1,5 +1,5 @@
 """
-Pydantic models for the sync payload v2.0.
+Pydantic models for the sync payload v3.0.
 Defines the complete JSON structure sent to the central API.
 
 JSON structure:
@@ -52,6 +52,7 @@ class StoreInfo(BaseModel):
     id_ponto_venda: int
     nome: str
     alias: str
+    cnpj: Optional[str] = None
 
 
 class WindowInfo(BaseModel):
@@ -66,7 +67,9 @@ class OpsInfo(BaseModel):
     """Operations summary for deduplication."""
 
     count: int
-    ids: list[int]
+    ids: list[int]  # PDV (Caixa) operation IDs
+    loja_count: int = 0
+    loja_ids: list[int] = Field(default_factory=list)  # Gestão (Loja) operation IDs
 
 
 class IntegrityInfo(BaseModel):
@@ -77,7 +80,7 @@ class IntegrityInfo(BaseModel):
 
 
 # ──────────────────────────────────────────────
-# Turno Models (NEW in v2.0)
+# Turno Models
 # ──────────────────────────────────────────────
 
 
@@ -86,6 +89,7 @@ class OperatorInfo(BaseModel):
 
     id_usuario: Optional[int] = None
     nome: Optional[str] = None
+    login: Optional[str] = None
 
 
 class PaymentTotal(BaseModel):
@@ -127,14 +131,20 @@ class TurnoDetail(BaseModel):
     fechado: Optional[bool] = None
     data_hora_inicio: Optional[datetime] = None
     data_hora_termino: Optional[datetime] = None
+    duracao_minutos: Optional[int] = None
+    periodo: Optional[str] = None  # MATUTINO / VESPERTINO / NOTURNO
     operador: OperatorInfo = Field(default_factory=OperatorInfo)
+    responsavel: Optional[OperatorInfo] = None
+    qtd_vendas: int = 0
+    total_vendas: Decimal = Decimal("0.00")
+    qtd_vendedores: int = 0
     totais_sistema: TurnoTotals = Field(default_factory=TurnoTotals)
     fechamento_declarado: Optional[ClosureTotals] = None
     falta_caixa: Optional[ShortageTotals] = None
 
 
 # ──────────────────────────────────────────────
-# Sale Detail Models (NEW in v2.0)
+# Sale Detail Models
 # ──────────────────────────────────────────────
 
 
@@ -168,6 +178,7 @@ class SaleDetail(BaseModel):
     """Individual sale with items and payments."""
 
     id_operacao: int
+    canal: str = Field(default="HIPER_CAIXA")  # HIPER_CAIXA or HIPER_LOJA
     data_hora: Optional[datetime] = None
     id_turno: Optional[str] = None
     itens: list[ProductItem] = Field(default_factory=list)
@@ -176,7 +187,44 @@ class SaleDetail(BaseModel):
 
 
 # ──────────────────────────────────────────────
-# Resumo Models (kept from v1.0)
+# Snapshot Models (NEW in v2.1, PR-11)
+# ──────────────────────────────────────────────
+
+
+class TurnoSnapshot(BaseModel):
+    """Snapshot of a closed turno for verification."""
+
+    id_turno: Optional[str] = None
+    sequencial: Optional[int] = None
+    fechado: bool = True
+    data_hora_inicio: Optional[datetime] = None
+    data_hora_termino: Optional[datetime] = None
+    duracao_minutos: Optional[int] = None
+    periodo: Optional[str] = None  # MATUTINO / VESPERTINO / NOTURNO
+    operador: OperatorInfo = Field(default_factory=OperatorInfo)
+    responsavel: OperatorInfo = Field(default_factory=OperatorInfo)
+    qtd_vendas: int = 0
+    total_vendas: Decimal = Decimal("0.00")
+    qtd_vendedores: int = 0
+
+
+class VendaSnapshot(BaseModel):
+    """Snapshot of a sale for verification."""
+
+    id_operacao: int
+    canal: str = Field(default="HIPER_CAIXA")  # HIPER_CAIXA or HIPER_LOJA
+    data_hora_inicio: Optional[datetime] = None
+    data_hora_termino: Optional[datetime] = None
+    duracao_segundos: Optional[int] = None
+    id_turno: Optional[str] = None
+    turno_seq: Optional[int] = None
+    vendedor: OperatorInfo = Field(default_factory=OperatorInfo)
+    qtd_itens: int = 0
+    total_itens: Decimal = Decimal("0.00")
+
+
+# ──────────────────────────────────────────────
+# Resumo Models
 # ──────────────────────────────────────────────
 
 
@@ -185,6 +233,7 @@ class VendorSale(BaseModel):
 
     id_usuario: Optional[int] = None
     nome: Optional[str] = None
+    login: Optional[str] = None
     qtd_cupons: int = 0
     total_vendido: Decimal = Decimal("0.00")
 
@@ -205,36 +254,23 @@ class SalesInfo(BaseModel):
 
 
 # ──────────────────────────────────────────────
-# Legacy TurnoInfo (kept for backward compat)
-# ──────────────────────────────────────────────
-
-
-class TurnoInfo(BaseModel):
-    """Legacy turno info (kept for reference, not used in v2 payload)."""
-
-    id_turno: Optional[str] = None
-    sequencial: Optional[int] = None
-    fechado: Optional[bool] = None
-    data_hora_inicio: Optional[datetime] = None
-    data_hora_termino: Optional[datetime] = None
-    id_usuario_operador: Optional[int] = None
-
-
-# ──────────────────────────────────────────────
 # Main Payload
 # ──────────────────────────────────────────────
 
 
 class SyncPayload(BaseModel):
-    """Complete sync payload v2.0 sent to the API."""
+    """Complete sync payload v3.0 sent to the API."""
 
     schema_version: str = Field(default=SCHEMA_VERSION)
+    event_type: str = Field(default="sales")
     agent: AgentInfo = Field(default_factory=AgentInfo)
     store: StoreInfo
     window: WindowInfo
     turnos: list[TurnoDetail] = Field(default_factory=list)
     vendas: list[SaleDetail] = Field(default_factory=list)
     resumo: SalesInfo = Field(default_factory=SalesInfo)
+    snapshot_turnos: list[TurnoSnapshot] = Field(default_factory=list)
+    snapshot_vendas: list[VendaSnapshot] = Field(default_factory=list)
     ops: OpsInfo
     integrity: IntegrityInfo
 
@@ -260,6 +296,7 @@ def build_turno_detail(
     system_payments: list[dict[str, Any]],
     closure_values: Optional[list[dict[str, Any]]] = None,
     shortage_values: Optional[list[dict[str, Any]]] = None,
+    responsavel: Optional[dict[str, Any]] = None,
 ) -> TurnoDetail:
     """Build a TurnoDetail from query results."""
 
@@ -333,16 +370,65 @@ def build_turno_detail(
             por_pagamento=shortage_payments,
         )
 
+    # Build responsavel info
+    resp_info = None
+    if responsavel:
+        resp_info = OperatorInfo(
+            id_usuario=responsavel.get("id_usuario"),
+            nome=responsavel.get("nome"),
+            login=responsavel.get("login"),
+        )
+
+    # Compute v3 fields from turno data
+    inicio = turno.get("data_hora_inicio")
+    termino = turno.get("data_hora_termino")
+    duracao_minutos = None
+    periodo = None
+
+    if inicio and termino:
+        try:
+            delta = termino - inicio
+            duracao_minutos = int(delta.total_seconds() / 60)
+        except (TypeError, ValueError):
+            duracao_minutos = None
+
+    if inicio:
+        try:
+            hora = inicio.hour if hasattr(inicio, 'hour') else 0
+            if hora < 12:
+                periodo = "MATUTINO"
+            elif hora < 18:
+                periodo = "VESPERTINO"
+            else:
+                periodo = "NOTURNO"
+        except (TypeError, AttributeError):
+            periodo = None
+
+    # Derive qtd_vendas and total_vendas from system totals
+    qtd_vendas = totais_sistema.qtd_vendas
+    total_vendas = totais_sistema.total
+
+    # Count distinct vendors from system_payments (approximation from payment data)
+    # Note: precise count comes from the snapshot query; here we use what's available
+    qtd_vendedores = 0  # Will be accurate from snapshot; here it's a placeholder
+
     return TurnoDetail(
         id_turno=str(turno.get("id_turno")) if turno.get("id_turno") else None,
         sequencial=turno.get("sequencial"),
         fechado=turno.get("fechado"),
         data_hora_inicio=_aware(turno.get("data_hora_inicio")),
         data_hora_termino=_aware(turno.get("data_hora_termino")),
+        duracao_minutos=duracao_minutos,
+        periodo=periodo,
         operador=OperatorInfo(
             id_usuario=turno.get("id_operador") or turno.get("id_usuario"),
             nome=turno.get("nome_operador"),
+            login=turno.get("login_operador"),
         ),
+        responsavel=resp_info,
+        qtd_vendas=qtd_vendas,
+        total_vendas=total_vendas,
+        qtd_vendedores=qtd_vendedores,
         totais_sistema=totais_sistema,
         fechamento_declarado=fechamento,
         falta_caixa=falta,
@@ -352,10 +438,14 @@ def build_turno_detail(
 def build_sale_details(
     sale_items: list[dict[str, Any]],
     sale_payments: list[dict[str, Any]],
+    canal: str = "HIPER_CAIXA",
 ) -> list[SaleDetail]:
     """
     Build individual SaleDetail objects from items and payments.
     Groups items and payments by id_operacao.
+
+    Args:
+        canal: Channel identifier ("HIPER_CAIXA" or "HIPER_LOJA")
     """
     # Group items by id_operacao
     items_by_op: dict[int, list[dict]] = {}
@@ -389,7 +479,7 @@ def build_sale_details(
         product_items = []
         total_venda = Decimal("0")
         for item in items:
-            total_item = Decimal(str(item.get("total_item", 0)))
+            total_item = Decimal(str(item.get("total_item") or 0))
             product_items.append(
                 ProductItem(
                     line_id=item.get("line_id"),
@@ -397,13 +487,14 @@ def build_sale_details(
                     id_produto=item["id_produto"],
                     codigo_barras=item.get("codigo_barras"),
                     nome=item.get("nome_produto"),
-                    qtd=Decimal(str(item.get("qtd", 1))),
-                    preco_unit=Decimal(str(item.get("preco_unit", 0))),
+                    qtd=Decimal(str(item.get("qtd") or 1)),
+                    preco_unit=Decimal(str(item.get("preco_unit") or 0)),
                     total=total_item,
-                    desconto=Decimal(str(item.get("desconto_item", 0))),
+                    desconto=Decimal(str(item.get("desconto_item") or 0)),
                     vendedor=OperatorInfo(
                         id_usuario=item.get("id_usuario_vendedor"),
                         nome=item.get("nome_vendedor"),
+                        login=item.get("login_vendedor"),
                     ) if item.get("id_usuario_vendedor") else None,
                 )
             )
@@ -417,8 +508,8 @@ def build_sale_details(
                     line_id=pay.get("line_id"),
                     id_finalizador=pay.get("id_finalizador"),
                     meio=pay.get("meio_pagamento"),
-                    valor=Decimal(str(pay.get("valor", 0))),
-                    troco=Decimal(str(pay.get("valor_troco", 0))),
+                    valor=Decimal(str(pay.get("valor") or 0)),
+                    troco=Decimal(str(pay.get("valor_troco") or 0)),
                     parcelas=pay.get("parcela"),
                 )
             )
@@ -426,6 +517,7 @@ def build_sale_details(
         sales.append(
             SaleDetail(
                 id_operacao=op_id,
+                canal=canal,
                 data_hora=meta["data_hora"],
                 id_turno=meta["id_turno"],
                 itens=product_items,
@@ -449,11 +541,18 @@ def build_payload(
     ops_ids: list[int],
     sales_by_vendor: list[dict[str, Any]],
     payments_by_method: list[dict[str, Any]],
+    snapshot_turnos: Optional[list["TurnoSnapshot"]] = None,
+    snapshot_vendas: Optional[list["VendaSnapshot"]] = None,
     warnings: Optional[list[str]] = None,
+    loja_ids: Optional[list[int]] = None,
+    store_cnpj: Optional[str] = None,
 ) -> SyncPayload:
     """
-    Build the complete sync payload v2.0 from query results.
+    Build the complete sync payload v3.0 from query results.
+    Includes both HiperCaixa (PDV) and HiperLoja (Gestão) sales.
     """
+    loja_ids = loja_ids or []
+
     # Build vendor sales (resumo)
     vendors = []
     for row in sales_by_vendor:
@@ -461,8 +560,9 @@ def build_payload(
             VendorSale(
                 id_usuario=row.get("id_usuario_vendedor"),
                 nome=row.get("vendedor_nome"),
+                login=row.get("vendedor_login"),
                 qtd_cupons=row.get("qtd_cupons", 0),
-                total_vendido=Decimal(str(row.get("total_vendido", 0))),
+                total_vendido=Decimal(str(row.get("total_vendido") or 0)),
             )
         )
 
@@ -480,12 +580,26 @@ def build_payload(
     # Generate sync_id
     sync_id = generate_sync_id(store_id, dt_from, dt_to)
 
+    # Determine event_type (consider both channels)
+    has_sales = len(ops_ids) > 0 or len(loja_ids) > 0
+    has_closed_turno = any(
+        t.fechado for t in turnos if t.fechado is not None
+    )
+    if has_sales and has_closed_turno:
+        event_type = "mixed"
+    elif has_closed_turno:
+        event_type = "turno_closure"
+    else:
+        event_type = "sales"
+
     return SyncPayload(
+        event_type=event_type,
         agent=AgentInfo(),
         store=StoreInfo(
             id_ponto_venda=store_id,
             nome=store_name,
             alias=store_alias,
+            cnpj=store_cnpj,
         ),
         window=WindowInfo(
             from_dt=dt_from,
@@ -498,12 +612,17 @@ def build_payload(
             by_vendor=vendors,
             by_payment=payments,
         ),
+        snapshot_turnos=snapshot_turnos or [],
+        snapshot_vendas=snapshot_vendas or [],
         ops=OpsInfo(
             count=len(ops_ids),
             ids=ops_ids,
+            loja_count=len(loja_ids),
+            loja_ids=loja_ids,
         ),
         integrity=IntegrityInfo(
             sync_id=sync_id,
             warnings=warnings or [],
         ),
     )
+

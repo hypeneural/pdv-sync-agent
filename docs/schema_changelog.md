@@ -1,5 +1,16 @@
 # Schema Changelog — PDV Sync Agent
 
+## v2.0.1 (2026-02-11) — PR-09
+
+**Payload raiz:**
+- `event_type` (NEW) — tipo de evento: `"sales"` | `"turno_closure"` | `"mixed"` (default: `"sales"`)
+
+**Comportamento:**
+- Agente agora envia POST quando turno fecha sem vendas novas (`event_type: "turno_closure"`)
+- Payloads com `vendas: []` e `ops.count: 0` são válidos quando `event_type != "sales"`
+
+---
+
 ## v2.0 (2026-02-10)
 
 **Payload raiz:**

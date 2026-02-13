@@ -1,6 +1,6 @@
 @echo off
 REM =============================================================================
-REM PDV Sync Agent - Updater (v1.1 — com hash + rollback)
+REM PDV Sync Agent - Updater (v1.2 — com hash + rollback)
 REM =============================================================================
 REM Baixa a versao mais recente, valida integridade, faz backup antes de trocar.
 REM Se a nova versao falhar ao iniciar, reverte automaticamente do backup.
@@ -32,7 +32,7 @@ set "HASH_URL=http://erp.maiscapinhas.com.br/download/PDVSyncAgent_latest.sha256
 
 echo.
 echo ============================================================
-echo   PDV Sync Agent - Atualizador v1.1
+echo   PDV Sync Agent - Atualizador v1.2
 echo ============================================================
 echo.
 

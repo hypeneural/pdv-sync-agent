@@ -70,6 +70,7 @@ class Settings(BaseSettings):
     sql_server_host: str = Field(default="localhost", alias="SQL_SERVER_HOST")
     sql_server_instance: str = Field(default="HIPER", alias="SQL_SERVER_INSTANCE")
     sql_database: str = Field(default="HiperPdv", alias="SQL_DATABASE")
+    sql_database_gestao: str = Field(default="Hiper", alias="SQL_DATABASE_GESTAO")
     sql_username: Optional[str] = Field(default=None, alias="SQL_USERNAME")
     sql_password: Optional[str] = Field(default=None, alias="SQL_PASSWORD")
     sql_trusted_connection: bool = Field(default=False, alias="SQL_TRUSTED_CONNECTION")
@@ -123,15 +124,14 @@ class Settings(BaseSettings):
             return f"{self.sql_server_host}\\{self.sql_server_instance}"
         return self.sql_server_host
 
-    @property
-    def odbc_connection_string(self) -> str:
-        """Build the ODBC connection string."""
+    def _build_connection_string(self, database: str) -> str:
+        """Build ODBC connection string for a given database."""
         driver = self.resolved_sql_driver
 
         parts = [
             f"DRIVER={{{driver}}}",
             f"SERVER={self.sql_server_full}",
-            f"DATABASE={self.sql_database}",
+            f"DATABASE={database}",
         ]
 
         if self.sql_trusted_connection:
@@ -153,6 +153,16 @@ class Settings(BaseSettings):
 
         return ";".join(parts)
 
+    @property
+    def odbc_connection_string(self) -> str:
+        """ODBC connection string for HiperPdv (Caixa)."""
+        return self._build_connection_string(self.sql_database)
+
+    @property
+    def odbc_connection_string_gestao(self) -> str:
+        """ODBC connection string for Hiper (Gestão)."""
+        return self._build_connection_string(self.sql_database_gestao)
+
     def log_config(self) -> None:
         """Log configuration (without sensitive data)."""
         auth_mode = (
@@ -172,7 +182,8 @@ class Settings(BaseSettings):
         logger.info("PDV Sync Agent Configuration")
         logger.info("=" * 60)
         logger.info(f"SQL Server: {self.sql_server_full}")
-        logger.info(f"Database: {self.sql_database}")
+        logger.info(f"Database PDV: {self.sql_database}")
+        logger.info(f"Database Gestão: {self.sql_database_gestao}")
         logger.info(f"Auth Mode: {auth_mode}")
         logger.info(f"ODBC Driver: {driver_display}")
         logger.info(f"Encrypt: {self.sql_encrypt} | TrustCert: {self.sql_trust_server_cert}")

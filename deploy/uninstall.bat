@@ -25,11 +25,12 @@ echo   PDV Sync Agent - Desinstalador
 echo ============================================================
 echo.
 
-REM ===== 1. Parar e remover tarefa =====
-echo [1/3] Parando tarefa agendada...
+REM ===== 1. Parar e remover tarefas =====
+echo [1/3] Parando tarefas agendadas...
 schtasks /end /tn "%TASK_NAME%" >nul 2>&1
 timeout /t 2 /nobreak >nul
 schtasks /delete /tn "%TASK_NAME%" /f >nul 2>&1
+schtasks /delete /tn "%TASK_NAME%_Shutdown" /f >nul 2>&1
 echo    OK.
 
 REM ===== 2. Remover binarios =====

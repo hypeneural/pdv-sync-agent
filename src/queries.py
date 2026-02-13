@@ -49,7 +49,8 @@ class QueryExecutor:
         query = f"""
             SELECT
                 id_ponto_venda,
-                {name_column} AS nome
+                {name_column} AS nome,
+                cnpj
             FROM dbo.ponto_venda
             WHERE id_ponto_venda = ?
         """
@@ -121,7 +122,8 @@ class QueryExecutor:
                 t.data_hora_inicio,
                 t.data_hora_termino,
                 t.id_usuario AS id_operador,
-                u.nome AS nome_operador
+                u.nome AS nome_operador,
+                u.login AS login_operador
             FROM dbo.turno t
             LEFT JOIN dbo.usuario u ON u.id_usuario = t.id_usuario
             WHERE t.id_turno IN (
@@ -140,6 +142,92 @@ class QueryExecutor:
         results = self.db.execute_query(query, (dt_from, dt_to))
         logger.info(f"Found {len(results)} turno(s) with activity in window")
         return results
+
+    def get_turnos_with_activity(
+        self,
+        dt_from: datetime,
+        dt_to: datetime,
+        id_ponto_venda: int,
+    ) -> list[dict[str, Any]]:
+        """
+        Get all turnos that had ANY relevant activity in the window:
+        - Sales (op=1), closure (op=9), shortage (op=4)
+        - OR turno that CLOSED within the window (data_hora_termino in range)
+        - OR turno currently OPEN (to report status)
+
+        This fixes the gap where turno closure without new sales was invisible.
+        """
+        query = """
+            SELECT DISTINCT
+                t.id_turno,
+                t.sequencial,
+                t.fechado,
+                t.data_hora_inicio,
+                t.data_hora_termino,
+                t.id_usuario AS id_operador,
+                u.nome AS nome_operador,
+                u.login AS login_operador
+            FROM dbo.turno t
+            LEFT JOIN dbo.usuario u ON u.id_usuario = t.id_usuario
+            WHERE t.id_ponto_venda = ?
+              AND (
+                -- Case 1: turno had any operation in the window (sales, closure, shortage)
+                t.id_turno IN (
+                    SELECT DISTINCT op.id_turno
+                    FROM dbo.operacao_pdv op
+                    WHERE op.operacao IN (1, 4, 9)
+                      AND op.cancelado = 0
+                      AND op.data_hora_termino IS NOT NULL
+                      AND op.data_hora_termino >= ?
+                      AND op.data_hora_termino < ?
+                )
+                -- Case 2: turno CLOSED within the window
+                OR (
+                    t.fechado = 1
+                    AND t.data_hora_termino IS NOT NULL
+                    AND t.data_hora_termino >= ?
+                    AND t.data_hora_termino < ?
+                )
+                -- Case 3: turno is currently OPEN (report live status)
+                OR (
+                    t.fechado = 0
+                    AND t.data_hora_termino IS NULL
+                )
+              )
+            ORDER BY t.data_hora_inicio
+        """
+
+        logger.debug(f"Fetching turnos with activity in window {dt_from} -> {dt_to}")
+        results = self.db.execute_query(
+            query, (id_ponto_venda, dt_from, dt_to, dt_from, dt_to)
+        )
+        logger.info(f"Found {len(results)} turno(s) with activity (sales/closure/open)")
+        return results
+
+    def detect_turno_closure_in_window(
+        self,
+        dt_from: datetime,
+        dt_to: datetime,
+        id_ponto_venda: int,
+    ) -> bool:
+        """
+        Quick check: did any turno close within the time window?
+        Used to decide if we should send a POST even without new sales.
+        """
+        query = """
+            SELECT TOP 1 1
+            FROM dbo.turno
+            WHERE id_ponto_venda = ?
+              AND fechado = 1
+              AND data_hora_termino IS NOT NULL
+              AND data_hora_termino >= ?
+              AND data_hora_termino < ?
+        """
+        results = self.db.execute_query(query, (id_ponto_venda, dt_from, dt_to))
+        closed = len(results) > 0
+        if closed:
+            logger.info("Turno closure detected in current window")
+        return closed
 
     # ──────────────────────────────────────────────
     # Turno Closure & Shortage
@@ -263,6 +351,7 @@ class QueryExecutor:
                 ops.id_turno,
                 it.id_usuario_vendedor,
                 u.nome AS vendedor_nome,
+                u.login AS vendedor_login,
                 COUNT(DISTINCT ops.id_operacao) AS qtd_cupons,
                 SUM(ISNULL(it.valor_total_liquido, 0)) AS total_vendido
             FROM ops
@@ -273,7 +362,8 @@ class QueryExecutor:
                 ops.id_ponto_venda,
                 ops.id_turno,
                 it.id_usuario_vendedor,
-                u.nome
+                u.nome,
+                u.login
             ORDER BY total_vendido DESC
         """
 
@@ -390,7 +480,8 @@ class QueryExecutor:
                 it.valor_total_liquido AS total_item,
                 ISNULL(it.valor_desconto, 0) AS desconto_item,
                 it.id_usuario_vendedor,
-                uv.nome AS nome_vendedor
+                uv.nome AS nome_vendedor,
+                uv.login AS login_vendedor
             FROM ops
             JOIN dbo.item_operacao_pdv it ON it.id_operacao = ops.id_operacao
             JOIN dbo.produto p ON p.id_produto = it.id_produto
@@ -478,6 +569,162 @@ class QueryExecutor:
         logger.debug(f"Fetching payments by method for turno {str(id_turno)[:12]}...")
         results = self.db.execute_query(query, (str(id_turno),))
         return results
+
+
+    # ──────────────────────────────────────────────
+    # Snapshots (for verification, PR-11)
+    # ──────────────────────────────────────────────
+
+    def get_turno_snapshot(
+        self,
+        id_ponto_venda: int,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """
+        Get the last N closed turnos with full details for verification.
+        Includes responsible vendor (most items sold), sales count, and total.
+        """
+        query = f"""
+            SELECT TOP {limit}
+                t.id_turno,
+                t.sequencial,
+                t.fechado,
+                t.data_hora_inicio,
+                t.data_hora_termino,
+                DATEDIFF(MINUTE, t.data_hora_inicio, t.data_hora_termino) AS duracao_minutos,
+                t.id_usuario AS id_operador,
+                u.nome AS nome_operador,
+                (SELECT COUNT(*) FROM dbo.operacao_pdv op
+                 WHERE op.id_turno = t.id_turno AND op.operacao = 1
+                   AND op.cancelado = 0) AS qtd_vendas,
+                (SELECT ISNULL(SUM(it.valor_total_liquido), 0)
+                 FROM dbo.operacao_pdv op2
+                 JOIN dbo.item_operacao_pdv it ON it.id_operacao = op2.id_operacao
+                 WHERE op2.id_turno = t.id_turno AND op2.operacao = 1
+                   AND op2.cancelado = 0 AND it.cancelado = 0) AS total_vendas,
+                (SELECT TOP 1 uv.id_usuario
+                 FROM dbo.operacao_pdv ov
+                 JOIN dbo.item_operacao_pdv iv ON iv.id_operacao = ov.id_operacao
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE ov.id_turno = t.id_turno AND ov.operacao = 1
+                   AND ov.cancelado = 0 AND iv.cancelado = 0
+                 GROUP BY uv.id_usuario ORDER BY COUNT(*) DESC
+                ) AS id_responsavel,
+                (SELECT TOP 1 uv.nome
+                 FROM dbo.operacao_pdv ov
+                 JOIN dbo.item_operacao_pdv iv ON iv.id_operacao = ov.id_operacao
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE ov.id_turno = t.id_turno AND ov.operacao = 1
+                   AND ov.cancelado = 0 AND iv.cancelado = 0
+                 GROUP BY uv.id_usuario, uv.nome ORDER BY COUNT(*) DESC
+                ) AS nome_responsavel,
+                (SELECT TOP 1 uv.login
+                 FROM dbo.operacao_pdv ov
+                 JOIN dbo.item_operacao_pdv iv ON iv.id_operacao = ov.id_operacao
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE ov.id_turno = t.id_turno AND ov.operacao = 1
+                   AND ov.cancelado = 0 AND iv.cancelado = 0
+                 GROUP BY uv.id_usuario, uv.login ORDER BY COUNT(*) DESC
+                ) AS login_responsavel,
+                (SELECT COUNT(DISTINCT iv2.id_usuario_vendedor)
+                 FROM dbo.operacao_pdv ov2
+                 JOIN dbo.item_operacao_pdv iv2 ON iv2.id_operacao = ov2.id_operacao
+                 WHERE ov2.id_turno = t.id_turno AND ov2.operacao = 1
+                   AND ov2.cancelado = 0 AND iv2.cancelado = 0
+                ) AS qtd_vendedores
+            FROM dbo.turno t
+            LEFT JOIN dbo.usuario u ON u.id_usuario = t.id_usuario
+            WHERE t.id_ponto_venda = ? AND t.fechado = 1
+            ORDER BY t.data_hora_inicio DESC
+        """
+
+        logger.debug(f"Fetching turno snapshot (last {limit}) for store {id_ponto_venda}")
+        results = self.db.execute_query(query, (id_ponto_venda,))
+        logger.info(f"Turno snapshot: {len(results)} closed turnos")
+        return results
+
+    def get_vendas_snapshot(
+        self,
+        id_ponto_venda: int,
+        limit: int = 10,
+    ) -> list[dict[str, Any]]:
+        """
+        Get the last N completed sales with summary for verification.
+        Includes vendor, item count, and total.
+        """
+        query = f"""
+            SELECT TOP {limit}
+                op.id_operacao,
+                op.data_hora_inicio,
+                op.data_hora_termino,
+                DATEDIFF(SECOND, op.data_hora_inicio, op.data_hora_termino)
+                    AS duracao_segundos,
+                t.id_turno,
+                t.sequencial AS turno_seq,
+                (SELECT COUNT(*) FROM dbo.item_operacao_pdv i
+                 WHERE i.id_operacao = op.id_operacao
+                   AND i.cancelado = 0) AS qtd_itens,
+                (SELECT ISNULL(SUM(i.valor_total_liquido), 0)
+                 FROM dbo.item_operacao_pdv i
+                 WHERE i.id_operacao = op.id_operacao
+                   AND i.cancelado = 0) AS total_itens,
+                (SELECT TOP 1 uv.id_usuario
+                 FROM dbo.item_operacao_pdv iv
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE iv.id_operacao = op.id_operacao
+                   AND iv.cancelado = 0) AS id_vendedor,
+                (SELECT TOP 1 uv.nome
+                 FROM dbo.item_operacao_pdv iv
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE iv.id_operacao = op.id_operacao
+                   AND iv.cancelado = 0) AS nome_vendedor,
+                (SELECT TOP 1 uv.login
+                 FROM dbo.item_operacao_pdv iv
+                 JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+                 WHERE iv.id_operacao = op.id_operacao
+                   AND iv.cancelado = 0) AS login_vendedor
+            FROM dbo.operacao_pdv op
+            JOIN dbo.turno t ON t.id_turno = op.id_turno
+            WHERE t.id_ponto_venda = ?
+              AND op.operacao = 1 AND op.cancelado = 0
+              AND op.data_hora_termino IS NOT NULL
+            ORDER BY op.data_hora_termino DESC
+        """
+
+        logger.debug(f"Fetching vendas snapshot (last {limit}) for store {id_ponto_venda}")
+        results = self.db.execute_query(query, (id_ponto_venda,))
+        logger.info(f"Vendas snapshot: {len(results)} recent sales")
+        return results
+
+    def get_turno_responsavel(
+        self,
+        id_turno: str,
+    ) -> Optional[dict[str, Any]]:
+        """
+        Get the principal vendor (most items sold) for a specific turno.
+        Returns {id_usuario, nome} or None if no sales.
+        """
+        query = """
+            SELECT TOP 1
+                uv.id_usuario,
+                uv.nome,
+                uv.login
+            FROM dbo.operacao_pdv ov
+            JOIN dbo.item_operacao_pdv iv ON iv.id_operacao = ov.id_operacao
+            JOIN dbo.usuario uv ON uv.id_usuario = iv.id_usuario_vendedor
+            WHERE ov.id_turno = ?
+              AND ov.operacao = 1 AND ov.cancelado = 0 AND iv.cancelado = 0
+            GROUP BY uv.id_usuario, uv.nome, uv.login
+            ORDER BY COUNT(*) DESC, SUM(iv.valor_total_liquido) DESC, uv.id_usuario ASC
+        """
+
+        results = self.db.execute_query(query, (str(id_turno),))
+        if results:
+            logger.debug(
+                f"Turno {str(id_turno)[:12]}... responsavel: {results[0]['nome']}"
+            )
+            return results[0]
+        return None
 
 
 def create_query_executor(db: DatabaseConnection) -> QueryExecutor:
