@@ -594,6 +594,7 @@ class QueryExecutor:
                 DATEDIFF(MINUTE, t.data_hora_inicio, t.data_hora_termino) AS duracao_minutos,
                 t.id_usuario AS id_operador,
                 u.nome AS nome_operador,
+                u.login AS login_operador,
                 (SELECT COUNT(*) FROM dbo.operacao_pdv op
                  WHERE op.id_turno = t.id_turno AND op.operacao = 1
                    AND op.cancelado = 0) AS qtd_vendas,

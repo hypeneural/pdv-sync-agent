@@ -82,6 +82,7 @@ class Settings(BaseSettings):
 
     # Store
     store_id_ponto_venda: int = Field(default=10, alias="STORE_ID_PONTO_VENDA")
+    store_id_filial: Optional[int] = Field(default=None, alias="STORE_ID_FILIAL")
     store_alias: str = Field(default="Loja 01", alias="STORE_ALIAS")
 
     # API
@@ -109,6 +110,11 @@ class Settings(BaseSettings):
         if v is None or v.strip() == "":
             return None
         return v
+
+    @property
+    def resolved_store_id_filial(self) -> int:
+        """Return store_id_filial if set, otherwise fall back to store_id_ponto_venda."""
+        return self.store_id_filial if self.store_id_filial is not None else self.store_id_ponto_venda
 
     @property
     def resolved_sql_driver(self) -> str:
@@ -188,7 +194,8 @@ class Settings(BaseSettings):
         logger.info(f"ODBC Driver: {driver_display}")
         logger.info(f"Encrypt: {self.sql_encrypt} | TrustCert: {self.sql_trust_server_cert}")
         logger.info("-" * 60)
-        logger.info(f"Store ID: {self.store_id_ponto_venda}")
+        logger.info(f"Store ID PDV: {self.store_id_ponto_venda}")
+        logger.info(f"Store ID Filial (Gestão): {self.resolved_store_id_filial}")
         logger.info(f"Store Alias: {self.store_alias}")
         logger.info("-" * 60)
         logger.info(f"API Endpoint: {self.api_endpoint}")

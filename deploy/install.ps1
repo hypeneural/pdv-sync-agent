@@ -1,10 +1,11 @@
 #Requires -RunAsAdministrator
 <#
 .SYNOPSIS
-    PDV Sync Agent - Installer v3.0 (PowerShell)
+    PDV Sync Agent - Installer v4.0 (PowerShell)
 .DESCRIPTION
     Instala ODBC 17, cria usuario SQL, gera .env, copia binarios,
     cria Task Scheduler e valida tudo rodando como SYSTEM.
+    v4.0: Adiciona auto-deteccao de STORE_ID_FILIAL para Gestao.
 .NOTES
     Rodar como Admin. Chamado pelo install.bat.
 #>
@@ -70,7 +71,7 @@ function Write-Fail {
 # ============================================================
 Write-Host ''
 Write-Host '============================================================' -ForegroundColor White
-Write-Host '  PDV Sync Agent - Instalador v3.0' -ForegroundColor White
+Write-Host '  PDV Sync Agent - Instalador v4.0' -ForegroundColor White
 Write-Host '============================================================' -ForegroundColor White
 Write-Host ''
 Write-Host "  Binario : $InstallDir"
@@ -327,6 +328,50 @@ if (-not $StoreAlias) { $StoreAlias = "loja-$StoreId" }
 
 Write-Ok "Loja: [$StoreId] $StoreAlias"
 
+# --- Detectar STORE_ID_FILIAL do Gestao ---
+$StoreIdFilial = $null
+try {
+    $csGestao = "Server=$Instance;Database=$DefaultDbGestao;User Id=$DefaultSqlUser;Password=$DefaultSqlPwd;TrustServerCertificate=True;Connect Timeout=10;"
+    $connGestao = New-Object System.Data.SqlClient.SqlConnection($csGestao)
+    $connGestao.Open()
+    $cmdGestao = $connGestao.CreateCommand()
+    $cmdGestao.CommandText = "SELECT DISTINCT op.id_filial FROM dbo.operacao_pdv op WHERE op.origem=2 AND op.operacao=1 ORDER BY op.id_filial"
+    $reader = $cmdGestao.ExecuteReader()
+    $filiais = @()
+    while ($reader.Read()) {
+        $filiais += $reader.GetInt32(0)
+    }
+    $reader.Close()
+    $connGestao.Close()
+
+    if ($filiais.Count -eq 1) {
+        $StoreIdFilial = $filiais[0]
+        Write-Ok "STORE_ID_FILIAL detectado automaticamente: $StoreIdFilial"
+    }
+    elseif ($filiais.Count -gt 1) {
+        Write-Host '' -ForegroundColor White
+        Write-Host '    Filiais encontradas no Gestao:' -ForegroundColor White
+        foreach ($f in $filiais) {
+            Write-Host "      [$f]" -ForegroundColor White
+        }
+        $inputFilial = Read-Host '    Digite o ID da filial para esta loja'
+        $StoreIdFilial = [int]$inputFilial
+    }
+    else {
+        Write-Warn 'Nenhuma filial com vendas Loja (origem=2) encontrada no Gestao'
+        Write-Host '    STORE_ID_FILIAL usara STORE_ID_PONTO_VENDA como fallback' -ForegroundColor Yellow
+    }
+}
+catch {
+    Write-Warn "Nao foi possivel detectar id_filial: $($_.Exception.Message)"
+    Write-Host '    STORE_ID_FILIAL usara STORE_ID_PONTO_VENDA como fallback' -ForegroundColor Yellow
+}
+
+if ($StoreIdFilial -and $StoreIdFilial -ne $StoreId) {
+    Write-Host "    ATENCAO: id_filial ($StoreIdFilial) != id_ponto_venda ($StoreId)" -ForegroundColor Yellow
+    Write-Host '    Isso e normal - PDV e Gestao usam IDs independentes.' -ForegroundColor Yellow
+}
+
 # ============================================================
 # STEP 5: Gerar .env
 # ============================================================
@@ -346,7 +391,7 @@ else {
 
     $envLines = @(
         '# =========================================================='
-        '# PDV Sync Agent v3.0 - Configuracao de Producao'
+        '# PDV Sync Agent v4.0 - Configuracao de Producao'
         "# Gerado automaticamente em $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
         '# =========================================================='
         ''
@@ -366,6 +411,7 @@ else {
         ''
         '# --- Loja ---'
         "STORE_ID_PONTO_VENDA=$StoreId"
+        $(if ($StoreIdFilial) { "STORE_ID_FILIAL=$StoreIdFilial" } else { '# STORE_ID_FILIAL=  (fallback: usa STORE_ID_PONTO_VENDA)' })
         "STORE_ALIAS=$StoreAlias"
         ''
         '# --- API ---'
@@ -443,7 +489,7 @@ $xmlLines = @(
     '<Task version="1.4" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">'
     '  <RegistrationInfo>'
     "    <URI>\$TaskName</URI>"
-    '    <Description>PDV Sync Agent v3.0 - Sincronizacao automatica de vendas</Description>'
+    '    <Description>PDV Sync Agent v4.0 - Sincronizacao automatica de vendas</Description>'
     '  </RegistrationInfo>'
     '  <Triggers>'
     '    <BootTrigger>'

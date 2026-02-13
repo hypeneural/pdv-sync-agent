@@ -1,5 +1,5 @@
 """
-Pydantic models for the sync payload v3.0.
+Pydantic models for the sync payload v4.0.
 Defines the complete JSON structure sent to the central API.
 
 JSON structure:
@@ -47,9 +47,10 @@ class AgentInfo(BaseModel):
 
 
 class StoreInfo(BaseModel):
-    """Information about the store (ponto_venda)."""
+    """Information about the store (ponto_venda + filial)."""
 
     id_ponto_venda: int
+    id_filial: Optional[int] = None
     nome: str
     alias: str
     cnpj: Optional[str] = None
@@ -126,6 +127,7 @@ class ShortageTotals(BaseModel):
 class TurnoDetail(BaseModel):
     """Complete turno info with reconciliation data."""
 
+    canal: str = Field(default="HIPER_CAIXA")  # HIPER_CAIXA or HIPER_LOJA
     id_turno: Optional[str] = None
     sequencial: Optional[int] = None
     fechado: Optional[bool] = None
@@ -194,6 +196,7 @@ class SaleDetail(BaseModel):
 class TurnoSnapshot(BaseModel):
     """Snapshot of a closed turno for verification."""
 
+    canal: str = Field(default="HIPER_CAIXA")  # HIPER_CAIXA or HIPER_LOJA
     id_turno: Optional[str] = None
     sequencial: Optional[int] = None
     fechado: bool = True
@@ -259,7 +262,7 @@ class SalesInfo(BaseModel):
 
 
 class SyncPayload(BaseModel):
-    """Complete sync payload v3.0 sent to the API."""
+    """Complete sync payload v4.0 sent to the API."""
 
     schema_version: str = Field(default=SCHEMA_VERSION)
     event_type: str = Field(default="sales")
@@ -297,6 +300,7 @@ def build_turno_detail(
     closure_values: Optional[list[dict[str, Any]]] = None,
     shortage_values: Optional[list[dict[str, Any]]] = None,
     responsavel: Optional[dict[str, Any]] = None,
+    canal: str = "HIPER_CAIXA",
 ) -> TurnoDetail:
     """Build a TurnoDetail from query results."""
 
@@ -413,6 +417,7 @@ def build_turno_detail(
     qtd_vendedores = 0  # Will be accurate from snapshot; here it's a placeholder
 
     return TurnoDetail(
+        canal=canal,
         id_turno=str(turno.get("id_turno")) if turno.get("id_turno") else None,
         sequencial=turno.get("sequencial"),
         fechado=turno.get("fechado"),
@@ -546,10 +551,11 @@ def build_payload(
     warnings: Optional[list[str]] = None,
     loja_ids: Optional[list[int]] = None,
     store_cnpj: Optional[str] = None,
+    store_id_filial: Optional[int] = None,
 ) -> SyncPayload:
     """
-    Build the complete sync payload v3.0 from query results.
-    Includes both HiperCaixa (PDV) and HiperLoja (Gestão) sales.
+    Build the complete sync payload v4.0 from query results.
+    Includes both HiperCaixa (PDV) and HiperLoja (Gestão) sales and turnos.
     """
     loja_ids = loja_ids or []
 
@@ -597,6 +603,7 @@ def build_payload(
         agent=AgentInfo(),
         store=StoreInfo(
             id_ponto_venda=store_id,
+            id_filial=store_id_filial,
             nome=store_name,
             alias=store_alias,
             cnpj=store_cnpj,

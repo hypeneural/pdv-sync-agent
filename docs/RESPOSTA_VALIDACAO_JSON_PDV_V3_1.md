@@ -58,8 +58,10 @@ Ref: `docs/VALIDACAO_JSON_PDV_V3_1_PRE_DEPLOY_2026-02-13.md`
 **Conclusão:** Snapshot é a verdade absoluta do turno *inteiro*. O detalhe pode estar parcial se o turno spanar múltiplas janelas de sync (embora a lógica tente mitigar, o snapshot é a fonte autoritativa de volume total).
 
 ### P1.4 - Presenca de `login` nos snapshots
-**Resposta:** Pode vir `null`.
-**Motivo:** Query faz `SELECT TOP 1 uv.login`. Se o usuário na tabela `usuario` não tiver login preenchido, retorna NULL. Não há fallback (ex: usar nome).
+**Resposta:** BUG CORRIGIDO.
+**Causa:** O código Python (`runner.py`) não mapeava os campos `login_operador`, `login_responsavel` e `login_vendedor` nos builders de snapshot, mesmo quando o SQL retornava esses dados. Além disso, faltava o `SELECT u.login AS login_operador` na query `get_turno_snapshot`.
+**Fix:** Aplicado em `queries.py` + `runner.py`. Após rebuild, todos os snapshots trarão login preenchido (quando disponível no banco).
+**Ref:** `docs/ANALISE_TURNOS_E_LOGIN_NULL.md`
 
 ### P1.5 - Unicidade de `login`
 **Resposta:** O agente não garante unicidade.
