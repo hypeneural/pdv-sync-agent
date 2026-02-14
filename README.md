@@ -14,19 +14,15 @@ A versão 4.0 opera com uma arquitetura **Dual-Database**, conectando-se simulta
 graph LR
     subgraph "Loja (Local)"
         direction TB
-        DB_PDV[(SQL: HiperPdv
-        Frente de Caixa)]
-        DB_G[(SQL: Hiper
-        Gestão/ERP)]
+        DB_PDV[("SQL: HiperPdv<br/>Frente de Caixa")]
+        DB_G[("SQL: Hiper<br/>Gestão/ERP")]
         
-        Disk[("Persistência
-        (State + Outbox)")]
+        Disk[("Persistência<br/>(State + Outbox)")]
         
-        Agent[PDV Sync Agent
-        (Service)]
+        Agent["PDV Sync Agent<br/>(Service)"]
         
-        DB_PDV -->|Leitura (op=1,9,4)| Agent
-        DB_G -->|Leitura (origem=2)| Agent
+        DB_PDV -->|"Leitura (op=1,9,4)"| Agent
+        DB_G -->|"Leitura (origem=2)"| Agent
         Agent <-->|Read/Write| Disk
     end
 
@@ -34,8 +30,8 @@ graph LR
         API[API Webhook]
     end
 
-    Agent -->|HTTPS POST (JSON)| API
-    Agent -.->|Retry (Backoff)| API
+    Agent -->|"HTTPS POST (JSON)"| API
+    Agent -.->|"Retry (Backoff)"| API
 ```
 
 ### Fluxo de Execução (Ciclo de 10 min)

@@ -39,7 +39,7 @@ A v4.0 introduziu a capacidade de conectar em duas instâncias/bancos SQL Server
 graph TD
     subgraph "Sync Runner Loop"
         A[Start Cycle] --> B{Process Outbox}
-        B -->|Pending Files| C[Send Offline Payload]
+        B -->|"Pending Files"| C[Send Offline Payload]
         B -->|Empty| D[Calculate Window]
         
         D --> E[Query PDV DB]
@@ -52,9 +52,9 @@ graph TD
         H -->|Yes| I[POST /webhook]
         H -->|No| J[Update State Only]
         
-        I -->|Success 200| J
-        I -->|Error 5xx| K[Save to Outbox]
-        I -->|Error 4xx| L[Move to Dead Letter]
+        I -->|"Success 200"| J
+        I -->|"Error 5xx"| K[Save to Outbox]
+        I -->|"Error 4xx"| L[Move to Dead Letter]
     end
 ```
 
